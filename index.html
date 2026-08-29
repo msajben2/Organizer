@@ -10,7 +10,7 @@
     <div class="container">
         <h1>Task Organizátor</h1>
         
-        <!-- Sekcia Kalendára (Upravená na 2 týždne) -->
+        <!-- Sekcia Kalendára -->
         <div class="calendar-section">
             <div class="calendar-header">
                 <button id="prevPeriod">❮</button>
@@ -25,18 +25,22 @@
             </div>
         </div>
 
-        <!-- Sekcia pre pridanie úlohy -->
+        <!-- Sekcia pre pridanie úlohy S TLAČIDLOM NA FOTKU -->
         <div class="input-section">
-            <input type="text" id="taskName" placeholder="Názov úlohy (napr. Skontrolovať kód)" required>
+            <input type="text" id="taskName" placeholder="Názov úlohy (napr. Papierik)" required>
             <input type="datetime-local" id="taskTime" required>
+            
+            <!-- TOTO JE TO NOVÉ TLAČIDLO PRE FOTKU/SÚBOR -->
+            <input type="file" id="taskImage" accept="image/*" capture="environment">
+            
             <button id="addTaskBtn">Pridať úlohu</button>
         </div>
 
-        <!-- Zoznam úloh pod kalendárom -->
+        <!-- Zoznam úloh -->
         <div class="task-list-section">
             <h2>Všetky nadchádzajúce úlohy</h2>
             <ul id="taskList">
-                <!-- Úlohy sa vygenerujú sem cez JavaScript -->
+                <!-- Úlohy sa vygenerujú sem -->
             </ul>
         </div>
     </div>
@@ -48,6 +52,9 @@
             <h2>Detail úlohy</h2>
             <p class="modal-info"><strong>Názov:</strong> <span id="modalTaskName"></span></p>
             <p class="modal-info"><strong>Dátum a čas:</strong> <span id="modalTaskTime"></span></p>
+            
+            <!-- MIESTO PRE ZOBRAZENIE FOTKY V MODALE -->
+            <img id="modalTaskImage" src="" alt="Fotka k úlohe" style="max-width: 100%; display: none; margin-top: 15px; border-radius: 4px; box-shadow: 0 2px 5px rgba(0,0,0,0.2);">
         </div>
     </div>
 
