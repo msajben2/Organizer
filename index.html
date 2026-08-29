@@ -5,18 +5,34 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Môj Organizátor</title>
     <link rel="stylesheet" href="style.css">
-    <!-- Tu neskôr pridáme manifest.json pre PWA -->
 </head>
 <body>
     <div class="container">
         <h1>Task Organizátor</h1>
         
+        <!-- Sekcia Kalendára -->
+        <div class="calendar-section">
+            <div class="calendar-header">
+                <button id="prevMonth">❮</button>
+                <h3 id="monthYear"></h3>
+                <button id="nextMonth">❯</button>
+            </div>
+            <div class="calendar-weekdays">
+                <div>Po</div><div>Ut</div><div>St</div><div>Št</div><div>Pi</div><div>So</div><div>Ne</div>
+            </div>
+            <div class="calendar-grid" id="calendarGrid">
+                <!-- Dni sa vygenerujú cez JavaScript -->
+            </div>
+        </div>
+
+        <!-- Sekcia pre pridanie úlohy -->
         <div class="input-section">
             <input type="text" id="taskName" placeholder="Názov úlohy (napr. Skontrolovať kód)" required>
             <input type="datetime-local" id="taskTime" required>
             <button id="addTaskBtn">Pridať úlohu</button>
         </div>
 
+        <!-- Zoznam úloh -->
         <div class="task-list-section">
             <h2>Nadchádzajúce úlohy</h2>
             <ul id="taskList">
@@ -25,7 +41,7 @@
         </div>
     </div>
 
-    <!-- Pripojenie JavaScriptu ako modulu -->
-    <script type="module" src="app.js"></script>
+    <!-- Pripojenie JavaScriptu -->
+    <script type="module" src="script.js"></script>
 </body>
 </html>
