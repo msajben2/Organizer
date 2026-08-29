@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Môj Organizátor</title>
     
-    <!-- PREPOJENIE NA PWA SÚBORY -->
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#007bff">
     <link rel="apple-touch-icon" href="icon-192.png">
@@ -13,8 +12,23 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="container">
-        <h1>Task Organizátor</h1>
+    <!-- PRIHLASOVACIA OBRAZOVKA -->
+    <div id="loginScreen" class="auth-container">
+        <h2>Prihlásenie</h2>
+        <input type="email" id="emailInput" placeholder="Tvoj E-mail" required>
+        <input type="password" id="passwordInput" placeholder="Tvoje Heslo" required>
+        <button id="loginBtn">Prihlásiť sa</button>
+        <button id="registerBtn" class="secondary-btn">Nová registrácia</button>
+        <p id="authError" style="color: red; display: none; margin-top: 10px; font-size: 14px;"></p>
+    </div>
+
+    <!-- HLAVNÁ APLIKÁCIA (Skrytá, kým sa neprihlásiš) -->
+    <div class="container" id="appContainer" style="display: none;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h1>Task Organizátor</h1>
+            <!-- TLAČIDLO NA ODHLÁSENIE -->
+            <button id="logoutBtn" style="background-color: #dc3545; padding: 8px 12px; font-size: 14px;">Odhlásiť sa</button>
+        </div>
         
         <div class="calendar-section">
             <div class="calendar-header">
@@ -26,7 +40,7 @@
                 <div>Po</div><div>Ut</div><div>St</div><div>Št</div><div>Pi</div><div>So</div><div>Ne</div>
             </div>
             <div class="calendar-grid" id="calendarGrid">
-                <!-- Dni sa vygenerujú cez JavaScript -->
+                <!-- Dni -->
             </div>
         </div>
 
@@ -47,7 +61,7 @@
         <div class="task-list-section">
             <h2>Všetky nadchádzajúce úlohy</h2>
             <ul id="taskList">
-                <!-- Úlohy sa vygenerujú sem -->
+                <!-- Úlohy -->
             </ul>
         </div>
     </div>
@@ -60,18 +74,18 @@
             <p class="modal-info"><strong>Dátum a čas:</strong> <span id="modalTaskTime"></span></p>
             <p class="modal-info"><strong>Priorita:</strong> <span id="modalTaskPriority"></span></p>
             <img id="modalTaskImage" src="" alt="Fotka k úlohe" style="max-width: 100%; display: none; margin-top: 15px; border-radius: 4px;">
+            <!-- NOVÉ TLAČIDLO NA VYMAZANIE -->
+            <button id="deleteTaskBtn" style="background-color: #dc3545; width: 100%; margin-top: 20px;">🗑️ Vymazať úlohu</button>
         </div>
     </div>
 
-    <!-- Pripojenie JavaScriptu logiky -->
     <script type="module" src="script.js"></script>
 
-    <!-- REGISTRÁCIA PWA SERVICE WORKERA -->
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('./sw.js')
-                    .then(reg => console.log('Service Worker beží!', reg))
+                    .then(reg => console.log('Service Worker beží!'))
                     .catch(err => console.error('Chyba SW:', err));
             });
         }

@@ -3,6 +3,11 @@ body { background-color: #f4f4f9; color: #333; display: flex; justify-content: c
 .container { background-color: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); width: 100%; max-width: 600px; }
 h1, h2 { text-align: center; margin-bottom: 20px; }
 
+/* DIZAJN PRIHLASOVANIA */
+.auth-container { background-color: #fff; padding: 30px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); width: 100%; max-width: 350px; display: flex; flex-direction: column; gap: 15px; margin: auto; margin-top: 50px; }
+.secondary-btn { background-color: #6c757d; }
+.secondary-btn:hover { background-color: #5a6268; }
+
 .input-section { display: flex; flex-direction: column; gap: 10px; margin-bottom: 30px; }
 input, button, select { padding: 10px; font-size: 16px; border: 1px solid #ccc; border-radius: 4px; }
 select { background-color: #fff; cursor: pointer; }
@@ -12,7 +17,6 @@ button:hover { background-color: #218838; }
 #taskList { list-style-type: none; }
 .task-item { background-color: #f9f9f9; padding: 15px; margin-bottom: 10px; border-left: 5px solid #007bff; border-radius: 4px; display: flex; justify-content: space-between; align-items: center; }
 
-/* FARBY PRIORÍT */
 .priority-low { border-left-color: #28a745 !important; }
 .priority-medium { border-left-color: #fd7e14 !important; }
 .priority-high { border-left-color: #dc3545 !important; }
