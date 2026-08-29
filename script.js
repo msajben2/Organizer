@@ -1,11 +1,13 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import { getFirestore, collection, addDoc, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-// FIREBASE KONFIGURÁCIA (Zatiaľ len placeholder, neskôr prepíšeme)
 const firebaseConfig = {
-  apiKey: "TVOJ_API_KEY",
-  authDomain: "tvoj-projekt.firebaseapp.com",
-  projectId: "tvoj-projekt",
+  apiKey: "AIzaSyB3s66YOemJTt5xAarMZwsQ4rT6G43dACw",
+  authDomain: "organizator-977e1.firebaseapp.com",
+  projectId: "organizator-977e1",
+  storageBucket: "organizator-977e1.firebasestorage.app",
+  messagingSenderId: "578176410373",
+  appId: "1:578176410373:web:0c67cdd0b090439c048d6c"
 };
 
 const app = initializeApp(firebaseConfig);
