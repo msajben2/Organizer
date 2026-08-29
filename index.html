@@ -4,13 +4,18 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Môj Organizátor</title>
+    
+    <!-- PREPOJENIE NA PWA SÚBORY -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#007bff">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div class="container">
         <h1>Task Organizátor</h1>
         
-        <!-- Sekcia Kalendára -->
         <div class="calendar-section">
             <div class="calendar-header">
                 <button id="prevPeriod">❮</button>
@@ -25,12 +30,10 @@
             </div>
         </div>
 
-        <!-- Sekcia pre pridanie úlohy -->
         <div class="input-section">
             <input type="text" id="taskName" placeholder="Názov úlohy (napr. Papierik)" required>
             <input type="datetime-local" id="taskTime" required>
             
-            <!-- VÝBER PRIORITY -->
             <select id="taskPriority" required>
                 <option value="low">🟢 Nízka priorita (upozorní 30 min. vopred)</option>
                 <option value="medium">🟠 Stredná priorita (upozorní 1 hod. vopred)</option>
@@ -41,7 +44,6 @@
             <button id="addTaskBtn">Pridať úlohu</button>
         </div>
 
-        <!-- Zoznam úloh -->
         <div class="task-list-section">
             <h2>Všetky nadchádzajúce úlohy</h2>
             <ul id="taskList">
@@ -50,7 +52,6 @@
         </div>
     </div>
 
-    <!-- SKRYTÉ VYSKAKOVACIE OKNO (MODAL) PRE DETAIL ÚLOHY -->
     <div id="taskModal" class="modal hidden">
         <div class="modal-content">
             <span class="close-modal" id="closeModal">&times;</span>
@@ -62,7 +63,18 @@
         </div>
     </div>
 
-    <!-- Pripojenie JavaScriptu -->
+    <!-- Pripojenie JavaScriptu logiky -->
     <script type="module" src="script.js"></script>
+
+    <!-- REGISTRÁCIA PWA SERVICE WORKERA -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .then(reg => console.log('Service Worker beží!', reg))
+                    .catch(err => console.error('Chyba SW:', err));
+            });
+        }
+    </script>
 </body>
 </html>
