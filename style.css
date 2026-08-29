@@ -19,7 +19,7 @@ body {
     border-radius: 8px;
     box-shadow: 0 4px 8px rgba(0,0,0,0.1);
     width: 100%;
-    max-width: 500px;
+    max-width: 600px; /* Mierne rozšírené pre lepší pohľad na 7 dní */
 }
 
 h1, h2 {
@@ -54,9 +54,7 @@ button:hover {
     background-color: #218838;
 }
 
-#taskList {
-    list-style-type: none;
-}
+#taskList { list-style-type: none; }
 
 .task-item {
     background-color: #f9f9f9;
@@ -68,7 +66,7 @@ button:hover {
     justify-content: space-between;
 }
 
-/* DIZAJN KALENDÁRA */
+/* DIZAJN KALENDÁRA (14 DNÍ) */
 .calendar-section {
     background: #fff;
     border: 1px solid #ddd;
@@ -89,9 +87,7 @@ button:hover {
     padding: 5px 15px;
 }
 
-.calendar-header button:hover {
-    background: #0056b3;
-}
+.calendar-header button:hover { background: #0056b3; }
 
 .calendar-weekdays {
     display: grid;
@@ -109,44 +105,91 @@ button:hover {
     gap: 2px;
 }
 
+/* Zväčšený deň pre vkladanie mini-úloh */
 .calendar-day {
     border: 1px solid #eee;
-    min-height: 60px;
-    padding: 5px;
-    font-size: 14px;
+    min-height: 90px;
+    padding: 4px;
     cursor: pointer;
     transition: background 0.2s;
     display: flex;
     flex-direction: column;
 }
 
-.calendar-day:hover {
-    background: #f0f8ff;
-}
-
-.calendar-day.empty {
-    background: #fafafa;
-    border: none;
-    cursor: default;
-}
+.calendar-day:hover { background: #f0f8ff; }
 
 .day-number {
     font-weight: bold;
+    font-size: 13px;
     margin-bottom: 2px;
 }
 
-.name-day {
-    font-size: 10px;
-    color: #666;
+.name-day, .holiday {
+    font-size: 9px;
+    line-height: 1.1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
-.holiday {
-    font-size: 10px;
-    color: #d9534f;
-    font-weight: bold;
-}
+.name-day { color: #666; }
+.holiday { color: #d9534f; font-weight: bold; }
 
 .calendar-day.today {
     background: #e6f2ff;
-    border: 1px solid #007bff;
+    border: 2px solid #007bff;
 }
+
+/* KONTAJNER PRE ÚLOHY PRIAMO V KALENDÁRI */
+.day-tasks-container {
+    margin-top: 4px;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.task-indicator {
+    background-color: #007bff;
+    color: white;
+    font-size: 10px;
+    padding: 3px 4px;
+    border-radius: 3px;
+    cursor: pointer;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.task-indicator:hover { background-color: #0056b3; }
+
+/* VYSKAKOVACIE OKNO (MODAL) */
+.modal {
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+.modal.hidden { display: none; }
+
+.modal-content {
+    background-color: white;
+    padding: 25px;
+    border-radius: 8px;
+    width: 90%;
+    max-width: 400px;
+    position: relative;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+}
+
+.close-modal {
+    position: absolute;
+    top: 10px; right: 15px;
+    font-size: 24px;
+    cursor: pointer;
+    color: #777;
+}
+
+.close-modal:hover { color: #000; }
+.modal-info { margin-bottom: 10px; font-size: 16px; }

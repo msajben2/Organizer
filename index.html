@@ -10,12 +10,12 @@
     <div class="container">
         <h1>Task Organizátor</h1>
         
-        <!-- Sekcia Kalendára -->
+        <!-- Sekcia Kalendára (Upravená na 2 týždne) -->
         <div class="calendar-section">
             <div class="calendar-header">
-                <button id="prevMonth">❮</button>
+                <button id="prevPeriod">❮</button>
                 <h3 id="monthYear"></h3>
-                <button id="nextMonth">❯</button>
+                <button id="nextPeriod">❯</button>
             </div>
             <div class="calendar-weekdays">
                 <div>Po</div><div>Ut</div><div>St</div><div>Št</div><div>Pi</div><div>So</div><div>Ne</div>
@@ -32,12 +32,22 @@
             <button id="addTaskBtn">Pridať úlohu</button>
         </div>
 
-        <!-- Zoznam úloh -->
+        <!-- Zoznam úloh pod kalendárom -->
         <div class="task-list-section">
-            <h2>Nadchádzajúce úlohy</h2>
+            <h2>Všetky nadchádzajúce úlohy</h2>
             <ul id="taskList">
                 <!-- Úlohy sa vygenerujú sem cez JavaScript -->
             </ul>
+        </div>
+    </div>
+
+    <!-- SKRYTÉ VYSKAKOVACIE OKNO (MODAL) PRE DETAIL ÚLOHY -->
+    <div id="taskModal" class="modal hidden">
+        <div class="modal-content">
+            <span class="close-modal" id="closeModal">&times;</span>
+            <h2>Detail úlohy</h2>
+            <p class="modal-info"><strong>Názov:</strong> <span id="modalTaskName"></span></p>
+            <p class="modal-info"><strong>Dátum a čas:</strong> <span id="modalTaskTime"></span></p>
         </div>
     </div>
 
