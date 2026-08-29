@@ -1,6 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import { getFirestore, collection, addDoc, onSnapshot, query, where, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-// NOVÉ IMPORTY PRE PRIHLASOVANIE
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
 const firebaseConfig = {
@@ -14,13 +13,12 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
-const auth = getAuth(app); // Inicializácia Auth
+const auth = getAuth(app);
 
 if ("Notification" in window && Notification.permission !== "granted" && Notification.permission !== "denied") {
     Notification.requestPermission();
 }
 
-// Elementy prihlasovania
 const loginScreen = document.getElementById('loginScreen');
 const appContainer = document.getElementById('appContainer');
 const emailInput = document.getElementById('emailInput');
@@ -49,16 +47,15 @@ const deleteTaskBtn = document.getElementById('deleteTaskBtn');
 let tasksData = [];
 let weekOffset = 0; 
 let currentUser = null;
-let currentOpenedTaskId = null; // Pre mazanie
+let currentOpenedTaskId = null;
 let unsubscribeSnapshot = null;
 
-// --- LOGIKA PRIHLASOVANIA ---
 onAuthStateChanged(auth, (user) => {
     if (user) {
         currentUser = user;
         loginScreen.style.display = 'none';
         appContainer.style.display = 'block';
-        loadUserTasks(); // Načíta len úlohy tohto používateľa
+        loadUserTasks();
     } else {
         currentUser = null;
         loginScreen.style.display = 'flex';
@@ -75,6 +72,7 @@ registerBtn.addEventListener('click', async () => {
         if(passwordInput.value.length < 6) throw new Error("Heslo musí mať aspoň 6 znakov.");
         await createUserWithEmailAndPassword(auth, emailInput.value, passwordInput.value);
     } catch (e) {
+        console.error(e);
         authError.innerText = "Chyba registrácie: " + e.message;
         authError.style.display = 'block';
     }
@@ -85,7 +83,8 @@ loginBtn.addEventListener('click', async () => {
         authError.style.display = 'none';
         await signInWithEmailAndPassword(auth, emailInput.value, passwordInput.value);
     } catch (e) {
-        authError.innerText = "Chyba: Nesprávny e-mail alebo heslo.";
+        console.error(e);
+        authError.innerText = "Chyba prihlásenia: Nesprávny e-mail alebo heslo.";
         authError.style.display = 'block';
     }
 });
@@ -114,7 +113,6 @@ function compressImage(file) {
     });
 }
 
-// PRIDÁVANIE ÚLOHY S UID
 addTaskBtn.addEventListener('click', async () => {
     const name = taskNameInput.value;
     const time = taskTimeInput.value;
@@ -128,7 +126,7 @@ addTaskBtn.addEventListener('click', async () => {
             if (file) base64Image = await compressImage(file);
             await addDoc(collection(db, "tasks"), { 
                 name: name, time: time, priority: priority, imageUrl: base64Image, 
-                userId: currentUser.uid, // TOTO SPRAVÍ ÚLOHU SÚKROMNOU
+                userId: currentUser.uid, 
                 timestamp: Date.now() 
             });
             taskNameInput.value = ''; taskImageInput.value = ''; taskPriorityInput.value = 'low';
@@ -143,7 +141,6 @@ addTaskBtn.addEventListener('click', async () => {
     }
 });
 
-// MAZANIE ÚLOHY
 deleteTaskBtn.addEventListener('click', async () => {
     if (currentOpenedTaskId) {
         const confirmDelete = confirm("Naozaj chceš túto úlohu vymazať?");
@@ -154,20 +151,17 @@ deleteTaskBtn.addEventListener('click', async () => {
     }
 });
 
-// NAČÍTANIE ÚLOH (Len pre prihláseného)
 function loadUserTasks() {
-    // Pýtame len úlohy, kde sa userId zhoduje s prihláseným človekom
     const q = query(collection(db, "tasks"), where("userId", "==", currentUser.uid));
     
     unsubscribeSnapshot = onSnapshot(q, (snapshot) => {
         taskList.innerHTML = ''; tasksData = []; 
         snapshot.forEach((doc) => {
             const task = doc.data();
-            task.id = doc.id; // Uložíme si ID dokumentu pre možnosť mazania
+            task.id = doc.id;
             tasksData.push(task); 
         });
 
-        // Usporiadanie podľa času
         tasksData.sort((a, b) => new Date(a.time) - new Date(b.time));
 
         tasksData.forEach((task) => {
@@ -271,6 +265,7 @@ function renderCalendar() {
 
 function renderTasksIntoCalendar() {
     document.querySelectorAll('.day-tasks-container').forEach(c => c.innerHTML = '');
+    tasksData.format = tasksData.forEach || function(){};
     tasksData.forEach(task => {
         if(!task.time) return;
         const taskDateOnly = task.time.split('T')[0]; 
@@ -291,7 +286,7 @@ function renderTasksIntoCalendar() {
 }
 
 function openTaskModal(task) {
-    currentOpenedTaskId = task.id; // Uložíme si ID pre prípad zmazania
+    currentOpenedTaskId = task.id;
     modalTaskName.innerText = task.name;
     const d = new Date(task.time);
     modalTaskTime.innerText = d.toLocaleString('sk-SK');
@@ -319,5 +314,4 @@ const initDate = new Date();
 initDate.setMinutes(initDate.getMinutes() - initDate.getTimezoneOffset());
 taskTimeInput.value = initDate.toISOString().slice(0, 16);
 
-// Vykreslíme prázdny kalendár (dáta sa doplnia až po prihlásení)
 renderCalendar();
