@@ -25,14 +25,19 @@
             </div>
         </div>
 
-        <!-- Sekcia pre pridanie úlohy S TLAČIDLOM NA FOTKU -->
+        <!-- Sekcia pre pridanie úlohy -->
         <div class="input-section">
             <input type="text" id="taskName" placeholder="Názov úlohy (napr. Papierik)" required>
             <input type="datetime-local" id="taskTime" required>
             
-            <!-- TOTO JE TO NOVÉ TLAČIDLO PRE FOTKU/SÚBOR -->
+            <!-- VÝBER PRIORITY -->
+            <select id="taskPriority" required>
+                <option value="low">🟢 Nízka priorita (upozorní 30 min. vopred)</option>
+                <option value="medium">🟠 Stredná priorita (upozorní 1 hod. vopred)</option>
+                <option value="high">🔴 Vysoká priorita (upozorní 2 hod. vopred)</option>
+            </select>
+
             <input type="file" id="taskImage" accept="image/*" capture="environment">
-            
             <button id="addTaskBtn">Pridať úlohu</button>
         </div>
 
@@ -52,9 +57,8 @@
             <h2>Detail úlohy</h2>
             <p class="modal-info"><strong>Názov:</strong> <span id="modalTaskName"></span></p>
             <p class="modal-info"><strong>Dátum a čas:</strong> <span id="modalTaskTime"></span></p>
-            
-            <!-- MIESTO PRE ZOBRAZENIE FOTKY V MODALE -->
-            <img id="modalTaskImage" src="" alt="Fotka k úlohe" style="max-width: 100%; display: none; margin-top: 15px; border-radius: 4px; box-shadow: 0 2px 5px rgba(0,0,0,0.2);">
+            <p class="modal-info"><strong>Priorita:</strong> <span id="modalTaskPriority"></span></p>
+            <img id="modalTaskImage" src="" alt="Fotka k úlohe" style="max-width: 100%; display: none; margin-top: 15px; border-radius: 4px;">
         </div>
     </div>
 
