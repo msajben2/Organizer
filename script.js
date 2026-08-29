@@ -13,14 +13,13 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// Žiadosť o systémové notifikácie
 if ("Notification" in window && Notification.permission !== "granted" && Notification.permission !== "denied") {
     Notification.requestPermission();
 }
 
 const taskNameInput = document.getElementById('taskName');
 const taskTimeInput = document.getElementById('taskTime');
-const taskPriorityInput = document.getElementById('taskPriority'); // Nový element
+const taskPriorityInput = document.getElementById('taskPriority');
 const taskImageInput = document.getElementById('taskImage');
 const addTaskBtn = document.getElementById('addTaskBtn');
 const taskList = document.getElementById('taskList');
@@ -74,7 +73,15 @@ addTaskBtn.addEventListener('click', async () => {
             await addDoc(collection(db, "tasks"), { 
                 name: name, time: time, priority: priority, imageUrl: base64Image, timestamp: Date.now() 
             });
-            taskNameInput.value = ''; taskTimeInput.value = ''; taskImageInput.value = ''; taskPriorityInput.value = 'low';
+            taskNameInput.value = ''; 
+            taskImageInput.value = ''; 
+            taskPriorityInput.value = 'low';
+            
+            // Po pridaní úlohy opäť predvyplníme aktuálny čas
+            const newDate = new Date();
+            newDate.setMinutes(newDate.getMinutes() - newDate.getTimezoneOffset());
+            taskTimeInput.value = newDate.toISOString().slice(0, 16);
+            
         } catch (e) {
             console.error("Chyba: ", e);
         } finally {
@@ -92,10 +99,14 @@ onSnapshot(q, (snapshot) => {
         const task = doc.data();
         tasksData.push(task); 
         const li = document.createElement('li');
-        li.className = `task-item priority-${task.priority}`;
+        
+        // Ošetrenie starých úloh bez priority
+        const priority = task.priority || 'low';
+        
+        li.className = `task-item priority-${priority}`;
         const dateObj = new Date(task.time);
         const icon = task.imageUrl ? "📸 " : "";
-        let dotClass = task.priority === 'high' ? 'dot-high' : (task.priority === 'medium' ? 'dot-medium' : 'dot-low');
+        let dotClass = priority === 'high' ? 'dot-high' : (priority === 'medium' ? 'dot-medium' : 'dot-low');
         
         li.innerHTML = `<span><span class="p-dot ${dotClass}"></span><strong>${icon}${task.name}</strong></span> <span>${dateObj.toLocaleString('sk-SK')}</span>`;
         taskList.appendChild(li);
@@ -103,17 +114,17 @@ onSnapshot(q, (snapshot) => {
     renderTasksIntoCalendar();
 });
 
-// Slučka pre NOTIFIKÁCIE podľa priority (30m, 60m, 120m)
 setInterval(() => {
     const now = new Date();
     const currentStr = now.toISOString().slice(0, 16); 
 
     tasksData.forEach(task => {
         if(!task.time) return;
+        const priority = task.priority || 'low';
         let offsetMinutes = 0;
-        if(task.priority === 'low') offsetMinutes = 30;
-        else if(task.priority === 'medium') offsetMinutes = 60;
-        else if(task.priority === 'high') offsetMinutes = 120;
+        if(priority === 'low') offsetMinutes = 30;
+        else if(priority === 'medium') offsetMinutes = 60;
+        else if(priority === 'high') offsetMinutes = 120;
 
         const taskTime = new Date(task.time);
         const alertTime = new Date(taskTime.getTime() - offsetMinutes * 60000);
@@ -129,7 +140,6 @@ setInterval(() => {
     });
 }, 60000);
 
-// --- KOMPLETNÝ KALENDÁR MENÍN A SVIATKOV ---
 const slovakHolidays = { "1-1": "Deň vzniku SR", "1-6": "Traja králi", "5-1": "Sviatok práce", "5-8": "Deň víťazstva", "7-5": "Cyril a Metod", "8-29": "SNP", "9-1": "Deň Ústavy", "9-15": "Sedembolestná P. Mária", "11-1": "Všetkých svätých", "11-17": "Deň boja za slobodu", "12-24": "Štedrý deň", "12-25": "1. sviatok vianočný", "12-26": "2. sviatok vianočný" };
 const slovakNameDays = {
     "1-1":"Nový rok", "1-2":"Alexandra, Karina", "1-3":"Daniela", "1-4":"Drahoslav", "1-5":"Andrea", "1-6":"Antónia", "1-7":"Bohuslava", "1-8":"Severín", "1-9":"Alexej", "1-10":"Dáša", "1-11":"Malvína", "1-12":"Ernest", "1-13":"Rastislav", "1-14":"Radovan", "1-15":"Dobroslav", "1-16":"Kristína", "1-17":"Nataša", "1-18":"Bohdana", "1-19":"Drahomíra", "1-20":"Dalibor", "1-21":"Vincent", "1-22":"Zora", "1-23":"Miloš", "1-24":"Timotej", "1-25":"Gejza", "1-26":"Tamara", "1-27":"Bohuš", "1-28":"Alfonz", "1-29":"Gašpar", "1-30":"Ema", "1-31":"Emil",
@@ -189,13 +199,20 @@ function renderCalendar() {
 }
 
 function renderTasksIntoCalendar() {
+    // TOTO JE OPRAVA PRE DUPLICITY - vymaže staré úlohy pred kreslením nových
+    document.querySelectorAll('.day-tasks-container').forEach(c => c.innerHTML = '');
+    
     tasksData.forEach(task => {
         if(!task.time) return;
         const taskDateOnly = task.time.split('T')[0]; 
         const targetContainer = document.getElementById(`tasks-${taskDateOnly}`);
         if (targetContainer) {
             const taskBlock = document.createElement('div');
-            taskBlock.className = `task-indicator ${task.priority}`;
+            
+            // Ošetrenie starých úloh
+            const priorityClass = task.priority || 'low';
+            taskBlock.className = `task-indicator ${priorityClass}`;
+            
             const icon = task.imageUrl ? "📸 " : "";
             taskBlock.innerText = icon + task.name;
             
@@ -213,7 +230,8 @@ function openTaskModal(task) {
     const d = new Date(task.time);
     modalTaskTime.innerText = d.toLocaleString('sk-SK');
     
-    const pText = task.priority === 'high' ? '🔴 Vysoká' : (task.priority === 'medium' ? '🟠 Stredná' : '🟢 Nízka');
+    const priority = task.priority || 'low';
+    const pText = priority === 'high' ? '🔴 Vysoká' : (priority === 'medium' ? '🟠 Stredná' : '🟢 Nízka');
     modalTaskPriority.innerText = pText;
     
     if (task.imageUrl) {
@@ -230,5 +248,10 @@ closeModal.addEventListener('click', () => modal.classList.add('hidden'));
 window.addEventListener('click', (e) => { if (e.target === modal) modal.classList.add('hidden'); });
 document.getElementById('prevPeriod').addEventListener('click', () => { weekOffset -= 1; renderCalendar(); });
 document.getElementById('nextPeriod').addEventListener('click', () => { weekOffset += 1; renderCalendar(); });
+
+// Predvyplnenie aktuálneho dátumu pri načítaní stránky
+const initDate = new Date();
+initDate.setMinutes(initDate.getMinutes() - initDate.getTimezoneOffset());
+taskTimeInput.value = initDate.toISOString().slice(0, 16);
 
 renderCalendar();
