@@ -16,17 +16,29 @@
     <div id="loginScreen" class="auth-container">
         <h2>Prihlásenie</h2>
         <input type="email" id="emailInput" placeholder="Tvoj E-mail" required>
-        <input type="password" id="passwordInput" placeholder="Tvoje Heslo" required>
+        
+        <!-- POLÍČKO NA HESLO S OKOM -->
+        <div class="password-wrapper">
+            <input type="password" id="passwordInput" placeholder="Tvoje Heslo" required>
+            <span id="togglePassword" class="eye-icon">👁️‍🗨️</span>
+        </div>
+
         <button id="loginBtn">Prihlásiť sa</button>
         <button id="registerBtn" class="secondary-btn">Nová registrácia</button>
-        <p id="authError" style="color: red; display: none; margin-top: 10px; font-size: 14px;"></p>
+        
+        <!-- TLAČIDLO NA RESET HESLA -->
+        <p style="text-align: center; margin-top: 5px;">
+            <a href="#" id="forgotPassword" style="font-size: 13px; color: #007bff; text-decoration: none;">Zabudol si heslo?</a>
+        </p>
+
+        <p id="authError" style="color: red; display: none; margin-top: 10px; font-size: 14px; text-align: center;"></p>
+        <p id="authSuccess" style="color: green; display: none; margin-top: 10px; font-size: 14px; text-align: center;"></p>
     </div>
 
-    <!-- HLAVNÁ APLIKÁCIA (Skrytá, kým sa neprihlásiš) -->
+    <!-- HLAVNÁ APLIKÁCIA -->
     <div class="container" id="appContainer" style="display: none;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
             <h1>Task Organizátor</h1>
-            <!-- TLAČIDLO NA ODHLÁSENIE -->
             <button id="logoutBtn" style="background-color: #dc3545; padding: 8px 12px; font-size: 14px;">Odhlásiť sa</button>
         </div>
         
@@ -39,9 +51,7 @@
             <div class="calendar-weekdays">
                 <div>Po</div><div>Ut</div><div>St</div><div>Št</div><div>Pi</div><div>So</div><div>Ne</div>
             </div>
-            <div class="calendar-grid" id="calendarGrid">
-                <!-- Dni -->
-            </div>
+            <div class="calendar-grid" id="calendarGrid"></div>
         </div>
 
         <div class="input-section">
@@ -60,9 +70,7 @@
 
         <div class="task-list-section">
             <h2>Všetky nadchádzajúce úlohy</h2>
-            <ul id="taskList">
-                <!-- Úlohy -->
-            </ul>
+            <ul id="taskList"></ul>
         </div>
     </div>
 
@@ -74,19 +82,15 @@
             <p class="modal-info"><strong>Dátum a čas:</strong> <span id="modalTaskTime"></span></p>
             <p class="modal-info"><strong>Priorita:</strong> <span id="modalTaskPriority"></span></p>
             <img id="modalTaskImage" src="" alt="Fotka k úlohe" style="max-width: 100%; display: none; margin-top: 15px; border-radius: 4px;">
-            <!-- NOVÉ TLAČIDLO NA VYMAZANIE -->
             <button id="deleteTaskBtn" style="background-color: #dc3545; width: 100%; margin-top: 20px;">🗑️ Vymazať úlohu</button>
         </div>
     </div>
 
     <script type="module" src="script.js"></script>
-
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./sw.js')
-                    .then(reg => console.log('Service Worker beží!'))
-                    .catch(err => console.error('Chyba SW:', err));
+                navigator.serviceWorker.register('./sw.js').catch(err => console.error(err));
             });
         }
     </script>

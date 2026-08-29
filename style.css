@@ -3,10 +3,14 @@ body { background-color: #f4f4f9; color: #333; display: flex; justify-content: c
 .container { background-color: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); width: 100%; max-width: 600px; }
 h1, h2 { text-align: center; margin-bottom: 20px; }
 
-/* DIZAJN PRIHLASOVANIA */
 .auth-container { background-color: #fff; padding: 30px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); width: 100%; max-width: 350px; display: flex; flex-direction: column; gap: 15px; margin: auto; margin-top: 50px; }
 .secondary-btn { background-color: #6c757d; }
 .secondary-btn:hover { background-color: #5a6268; }
+
+/* Obal pre heslo s ikonou oka */
+.password-wrapper { position: relative; display: flex; align-items: center; }
+.password-wrapper input { width: 100%; padding-right: 40px; }
+.eye-icon { position: absolute; right: 10px; cursor: pointer; font-size: 18px; user-select: none; }
 
 .input-section { display: flex; flex-direction: column; gap: 10px; margin-bottom: 30px; }
 input, button, select { padding: 10px; font-size: 16px; border: 1px solid #ccc; border-radius: 4px; }

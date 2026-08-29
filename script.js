@@ -1,6 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import { getFirestore, collection, addDoc, onSnapshot, query, where, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, sendPasswordResetEmail, browserLocalPersistence, setPersistence } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyB3s66YOemJTt5xAarMZwsQ4rT6G43dACw",
@@ -15,6 +15,11 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
 
+// Nastavenie lokálnej perzistencie pre stabilné prihlásenie
+setPersistence(auth, browserLocalPersistence).catch((error) => {
+    console.error("Chyba perzistencie:", error);
+});
+
 if ("Notification" in window && Notification.permission !== "granted" && Notification.permission !== "denied") {
     Notification.requestPermission();
 }
@@ -23,10 +28,24 @@ const loginScreen = document.getElementById('loginScreen');
 const appContainer = document.getElementById('appContainer');
 const emailInput = document.getElementById('emailInput');
 const passwordInput = document.getElementById('passwordInput');
+const togglePassword = document.getElementById('togglePassword');
 const loginBtn = document.getElementById('loginBtn');
 const registerBtn = document.getElementById('registerBtn');
 const logoutBtn = document.getElementById('logoutBtn');
+const forgotPasswordBtn = document.getElementById('forgotPassword');
 const authError = document.getElementById('authError');
+const authSuccess = document.getElementById('authSuccess');
+
+// Prepínanie viditeľnosti hesla (oko)
+togglePassword.addEventListener('click', () => {
+    if (passwordInput.type === 'password') {
+        passwordInput.type = 'text';
+        togglePassword.innerText = '🙈';
+    } else {
+        passwordInput.type = 'password';
+        togglePassword.innerText = '👁️‍🗨️';
+    }
+});
 
 const taskNameInput = document.getElementById('taskName');
 const taskTimeInput = document.getElementById('taskTime');
@@ -67,24 +86,45 @@ onAuthStateChanged(auth, (user) => {
 });
 
 registerBtn.addEventListener('click', async () => {
+    authError.style.display = 'none';
+    authSuccess.style.display = 'none';
     try {
-        authError.style.display = 'none';
         if(passwordInput.value.length < 6) throw new Error("Heslo musí mať aspoň 6 znakov.");
         await createUserWithEmailAndPassword(auth, emailInput.value, passwordInput.value);
     } catch (e) {
-        console.error(e);
         authError.innerText = "Chyba registrácie: " + e.message;
         authError.style.display = 'block';
     }
 });
 
 loginBtn.addEventListener('click', async () => {
+    authError.style.display = 'none';
+    authSuccess.style.display = 'none';
     try {
-        authError.style.display = 'none';
         await signInWithEmailAndPassword(auth, emailInput.value, passwordInput.value);
     } catch (e) {
-        console.error(e);
         authError.innerText = "Chyba prihlásenia: Nesprávny e-mail alebo heslo.";
+        authError.style.display = 'block';
+    }
+});
+
+// Reset hesla
+forgotPasswordBtn.addEventListener('click', async (e) => {
+    e.preventDefault();
+    authError.style.display = 'none';
+    authSuccess.style.display = 'none';
+    const email = emailInput.value;
+    if (!email) {
+        authError.innerText = "Prosím, najprv zadaj svoj e-mail do políčka.";
+        authError.style.display = 'block';
+        return;
+    }
+    try {
+        await sendPasswordResetEmail(auth, email);
+        authSuccess.innerText = "Odkaz na reset hesla bol odoslaný na tvoj e-mail!";
+        authSuccess.style.display = 'block';
+    } catch (err) {
+        authError.innerText = "Nepodarilo sa odoslať reset: " + err.message;
         authError.style.display = 'block';
     }
 });
@@ -265,7 +305,6 @@ function renderCalendar() {
 
 function renderTasksIntoCalendar() {
     document.querySelectorAll('.day-tasks-container').forEach(c => c.innerHTML = '');
-    tasksData.format = tasksData.forEach || function(){};
     tasksData.forEach(task => {
         if(!task.time) return;
         const taskDateOnly = task.time.split('T')[0]; 
