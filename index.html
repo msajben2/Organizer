@@ -126,7 +126,27 @@
             </div>
         </div>
     </div>
+    <!-- VEČERNÉ ZHODNOTENIE MODAL -->
+    <div id="reviewModal" class="modal hidden">
+        <div class="modal-content" style="text-align: center;">
+            <span class="close-modal" id="closeReviewModal">&times;</span>
+            <h2>Večerné zhodnotenie</h2>
+            <p id="reviewProgress" style="font-weight: bold; margin-bottom: 15px; color: #007bff;"></p>
 
+            <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 20px; text-align: left;">
+                <p class="modal-info"><strong>Úloha:</strong> <span id="reviewTaskName"></span></p>
+                <p class="modal-info"><strong>Čas:</strong> <span id="reviewTaskTime"></span></p>
+                <p class="modal-info" id="reviewTaskRoutine" style="display: none; font-size: 12px; color: #007bff;">🔄 Súčasť rutiny</p>
+                <p class="modal-info"><strong>Odmena:</strong> <span id="reviewTaskReward"></span></p>
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 10px;">
+                <button id="reviewCompleteBtn" style="background-color: #28a745;">✅ Splniť</button>
+                <button id="reviewSnoozeBtn" class="snooze-btn">⏳ Odložiť na zajtra</button>
+                <button id="reviewDeleteBtn" style="background-color: #dc3545;">🗑️ Vymazať</button>
+            </div>
+        </div>
+    </div>
     <script type="module" src="script.js"></script>
     <script>
         if ('serviceWorker' in navigator) { window.addEventListener('load', () => { navigator.serviceWorker.register('./sw.js').catch(err => console.error(err)); }); }
