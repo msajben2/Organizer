@@ -227,8 +227,15 @@ async function processComplete(task) {
 
 async function processSnooze(task) {
     let posunutCeluSekvenciu = false;
+
     if (task.rutinaId) {
-        posunutCeluSekvenciu = confirm("Tento plán je súčasťou rutiny.\n\nKlikni [OK] pre posunutie CELEJ SEKVENCIE.\n(Posunie túto a všetky budúce úlohy v sérii).\n\nKlikni [ZRUŠIŤ] pre posunutie IBA TEJTO JEDNEJ úlohy.");
+        // Zistíme, či je to rutina viazaná na fixné dni v týždni
+        if (task.routineType === 'weekly') {
+            alert("ℹ️ Táto úloha má fixné dni v týždni (napr. Po, St, Pi).\n\nAby sa ti nerozbil celotýždňový rozvrh, na zajtra sa posunie IBA TÁTO JEDNA úloha. Zvyšok tvojho plánu zostáva nezmenený.");
+        } else {
+            // Pre intervalové rutiny a staré úlohy bez typu sa pýtame klasicky
+            posunutCeluSekvenciu = confirm("Tento plán je súčasťou rutiny.\n\nKlikni [OK] pre posunutie CELEJ SEKVENCIE.\n(Posunie túto a všetky budúce úlohy v sérii).\n\nKlikni [ZRUŠIŤ] pre posunutie IBA TEJTO JEDNEJ úlohy.");
+        }
     }
     
     // 1. Zistíme, kedy sa mala úloha pôvodne konať
