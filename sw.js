@@ -1,4 +1,4 @@
-const CACHE_NAME = 'organizator-v1';
+const CACHE_NAME = 'organizator-v2';
 const urlsToCache = [
     './',
     './index.html',
