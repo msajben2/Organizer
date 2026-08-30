@@ -488,10 +488,12 @@ function openTaskModal(task) {
     
     let actualReward = getTaskReward(task);
     if (task.status === 'splnena') {
-        modalTaskReward.innerHTML = `<span style="color: #6c757d;">Úloha je už splnená</span>`;
-        completeTaskBtn.style.display = 'none'; snoozeTaskBtn.style.display = 'none';
+    modalTaskReward.innerHTML = `<span style="color: #6c757d;">Úloha je už splnená</span>`;
+    completeTaskBtn.style.display = 'none'; snoozeTaskBtn.style.display = 'none';
+    deleteTaskBtn.style.display = 'none'; // PRIDANÉ: Schová tlačidlo vymazať
     } else {
-        completeTaskBtn.style.display = 'block'; snoozeTaskBtn.style.display = 'block';
+    completeTaskBtn.style.display = 'block'; snoozeTaskBtn.style.display = 'block';
+    deleteTaskBtn.style.display = 'block'; // PRIDANÉ: Ukáže tlačidlo vymazať pre aktívne
         if (actualReward > 0) { modalTaskReward.innerHTML = `<span style="color: #28a745; font-weight: bold;">🪙 +${actualReward} mincí</span>`; } 
         else { modalTaskReward.innerHTML = `<span style="color: #dc3545; text-decoration: line-through;">🪙 0 mincí (opakovane odložené)</span>`; }
     }
@@ -537,7 +539,7 @@ function renderShop() {
         const canAfford = currentTotalCoins >= reward.price;
         const itemDiv = document.createElement('div');
         itemDiv.className = 'shop-item';
-
+        
         itemDiv.innerHTML = `
             <div class="shop-icon">${reward.icon}</div>
             <div class="shop-title">${reward.name}</div>
@@ -545,21 +547,35 @@ function renderShop() {
                 🪙 ${reward.price}
             </button>
         `;
-
+        
         const buyBtn = itemDiv.querySelector('.shop-btn');
-        buyBtn.addEventListener('click', () => buyReward(reward));
-
+        // ZMENA: Tu posielame do funkcie aj samotné tlačidlo (e.target), aby sme ho vedeli zamknúť
+        buyBtn.addEventListener('click', (e) => buyReward(reward, e.target));
+        
         shopItemsContainer.appendChild(itemDiv);
     });
 }
 
-async function buyReward(reward) {
+async function buyReward(reward, btnElement) {
+    // Ešte jedna poistka, či máš naozaj dosť mincí
     if (currentTotalCoins >= reward.price) {
         const confirmBuy = confirm(`Naozaj si chceš kúpiť "${reward.name}" za ${reward.price} mincí?`);
         if (confirmBuy) {
-            const userRef = doc(db, "users", currentUser.uid);
-            await updateDoc(userRef, { totalCoins: increment(-reward.price) });
-            alert(`Gratulujem! Zakúpil si: ${reward.name} 🎉 Uži si odmenu!`);
+            // OKAMŽITÉ ZAMKNUTIE TLAČIDLA PROTI DVOJKLIKOM
+            btnElement.disabled = true;
+            btnElement.innerText = "Kupujem...";
+            
+            try {
+                const userRef = doc(db, "users", currentUser.uid);
+                await updateDoc(userRef, { totalCoins: increment(-reward.price) });
+                alert(`Gratulujem! Zakúpil si: ${reward.name} 🎉 Uži si odmenu!`);
+                // Po úspešnom nákupe sa obchod sám prekreslí vďaka Firebase onSnapshot
+            } catch (error) {
+                alert("Nastala chyba pri nákupe.");
+                // Ak by internet vypadol, odomkneme tlačidlo naspäť
+                btnElement.disabled = false;
+                btnElement.innerText = `🪙 ${reward.price}`;
+            }
         }
     }
 }
