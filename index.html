@@ -17,20 +17,17 @@
         <h2 id="authTitle">Prihlásenie</h2>
         <input type="email" id="emailInput" placeholder="Tvoj E-mail" required>
         
-        <!-- Heslo 1 -->
         <div class="password-wrapper">
             <input type="password" id="passwordInput" placeholder="Heslo" required>
             <span id="togglePassword" class="eye-icon">👁️‍🗨️</span>
         </div>
 
-        <!-- Heslo 2 (Zobrazí sa len pri registrácii) -->
         <div class="password-wrapper" id="confirmPasswordWrapper" style="display: none; margin-top: 10px;">
             <input type="password" id="confirmPasswordInput" placeholder="Zopakuj heslo">
         </div>
 
         <button id="mainAuthBtn">Prihlásiť sa</button>
         
-        <!-- Prepínanie medzi prihlásením a registráciou -->
         <p style="text-align: center; margin-top: 10px;">
             <a href="#" id="toggleAuthMode" style="font-size: 14px; color: #28a745; text-decoration: none; font-weight: bold;">Nemáš účet? Zaregistruj sa</a>
         </p>
@@ -45,9 +42,14 @@
 
     <!-- HLAVNÁ APLIKÁCIA -->
     <div class="container" id="appContainer" style="display: none;">
+        
+        <!-- HLAVIČKA S MINCAMI A ODHLÁSENÍM -->
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-            <h1>Task Organizátor</h1>
-            <button id="logoutBtn" style="background-color: #dc3545; padding: 8px 12px; font-size: 14px;">Odhlásiť sa</button>
+            <h1>Organizátor</h1>
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <div id="coinBalance" class="coin-badge">🪙 0</div>
+                <button id="logoutBtn" style="background-color: #dc3545; padding: 6px 10px; font-size: 12px;">Odhlásiť</button>
+            </div>
         </div>
         
         <div class="calendar-section">
@@ -67,9 +69,9 @@
             <input type="datetime-local" id="taskTime" required>
             
             <select id="taskPriority" required>
-                <option value="low">🟢 Nízka priorita (upozorní 30 min. vopred)</option>
-                <option value="medium">🟠 Stredná priorita (upozorní 1 hod. vopred)</option>
-                <option value="high">🔴 Vysoká priorita (upozorní 2 hod. vopred)</option>
+                <option value="low">🟢 Nízka (10 mincí)</option>
+                <option value="medium">🟠 Stredná (20 mincí)</option>
+                <option value="high">🔴 Vysoká (30 mincí)</option>
             </select>
 
             <input type="file" id="taskImage" accept="image/*" capture="environment">
@@ -77,20 +79,27 @@
         </div>
 
         <div class="task-list-section">
-            <h2>Všetky nadchádzajúce úlohy</h2>
+            <h2>Tvoje úlohy</h2>
             <ul id="taskList"></ul>
         </div>
     </div>
 
+    <!-- DETAIL ÚLOHY S NOVÝMI TLAČIDLAMI -->
     <div id="taskModal" class="modal hidden">
         <div class="modal-content">
             <span class="close-modal" id="closeModal">&times;</span>
             <h2>Detail úlohy</h2>
             <p class="modal-info"><strong>Názov:</strong> <span id="modalTaskName"></span></p>
-            <p class="modal-info"><strong>Dátum a čas:</strong> <span id="modalTaskTime"></span></p>
-            <p class="modal-info"><strong>Priorita:</strong> <span id="modalTaskPriority"></span></p>
+            <p class="modal-info"><strong>Čas:</strong> <span id="modalTaskTime"></span></p>
+            <p class="modal-info"><strong>Odmena:</strong> <span id="modalTaskReward"></span></p>
+            
             <img id="modalTaskImage" src="" alt="Fotka k úlohe" style="max-width: 100%; display: none; margin-top: 15px; border-radius: 4px;">
-            <button id="deleteTaskBtn" style="background-color: #dc3545; width: 100%; margin-top: 20px;">🗑️ Vymazať úlohu</button>
+            
+            <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 20px;">
+                <button id="completeTaskBtn" style="background-color: #28a745;">✅ Splniť úlohu</button>
+                <button id="snoozeTaskBtn" class="snooze-btn">⏳ Odložiť o 1 deň</button>
+                <button id="deleteTaskBtn" style="background-color: #dc3545;">🗑️ Vymazať trvalo</button>
+            </div>
         </div>
     </div>
 
