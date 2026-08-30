@@ -248,9 +248,44 @@ snoozeTaskBtn.addEventListener('click', async () => {
 });
 
 deleteTaskBtn.addEventListener('click', async () => {
-    if (currentOpenedTask) {
-        const confirmDelete = confirm("Naozaj chceš trvalo zmazať bez splnenia? (Zmaže sa len táto konkrétna)");
-        if (confirmDelete) { await deleteDoc(doc(db, "tasks", currentOpenedTask.id)); modal.classList.add('hidden'); }
+    if (!currentOpenedTask) return;
+
+    if (currentOpenedTask.rutinaId) {
+        const zmazatCelu = confirm(
+            "Táto úloha je súčasťou rutiny.\n\n" +
+            "Klikni [OK], ak chceš zmazať CELÚ SEKVENCIU (túto aj všetky budúce z tohto cyklu).\n" +
+            "Klikni [ZRUŠIŤ], ak chceš riešiť iba túto jednu konkrétnu úlohu."
+        );
+
+        if (zmazatCelu) {
+            // Hromadné vymazanie pomocou dávky (batch)
+            const q = query(collection(db, "tasks"), 
+                where("rutinaId", "==", currentOpenedTask.rutinaId),
+                where("time", ">=", currentOpenedTask.time)
+            );
+            const querySnapshot = await getDocs(q);
+            const batch = writeBatch(db);
+            
+            querySnapshot.forEach((docSnap) => {
+                batch.delete(docSnap.ref);
+            });
+            await batch.commit();
+            modal.classList.add('hidden');
+        } else {
+            // Používateľ dal zrušiť hromadné mazanie, overíme, či chce zmazať aspoň tú jednu
+            const zmazatJednu = confirm("Chceš teda trvalo zmazať IBA TÚTO JEDNU konkrétnu úlohu?");
+            if (zmazatJednu) {
+                await deleteDoc(doc(db, "tasks", currentOpenedTask.id));
+                modal.classList.add('hidden');
+            }
+        }
+    } else {
+        // Klasické mazanie pre jednorazovú úlohu
+        const confirmDelete = confirm("Naozaj chceš túto jednorazovú úlohu trvalo zmazať?");
+        if (confirmDelete) { 
+            await deleteDoc(doc(db, "tasks", currentOpenedTask.id)); 
+            modal.classList.add('hidden'); 
+        }
     }
 });
 
