@@ -154,7 +154,8 @@ addTaskBtn.addEventListener('click', async () => {
             const baseTaskData = { 
                 name: name, priority: priority, imageUrl: base64Image, 
                 userId: currentUser.uid, timestamp: Date.now(), 
-                status: "aktivna", odlozenia: 0 
+                status: "aktivna", odlozenia: 0,
+                routineType: taskType 
             };
 
             if (taskType === 'single') {
@@ -227,24 +228,45 @@ async function processComplete(task) {
 async function processSnooze(task) {
     let posunutCeluSekvenciu = false;
     if (task.rutinaId) {
-        posunutCeluSekvenciu = confirm("Tento plán je súčasťou rutiny.\n\nKlikni [OK] pre posunutie CELEJ SEKVENCIE.\n(Posunie túto a všetky budúce úlohy v sérii o 1 deň).\n\nKlikni [ZRUŠIŤ] pre posunutie IBA TEJTO JEDNEJ úlohy.");
+        posunutCeluSekvenciu = confirm("Tento plán je súčasťou rutiny.\n\nKlikni [OK] pre posunutie CELEJ SEKVENCIE.\n(Posunie túto a všetky budúce úlohy v sérii).\n\nKlikni [ZRUŠIŤ] pre posunutie IBA TEJTO JEDNEJ úlohy.");
     }
     
+    // 1. Zistíme, kedy sa mala úloha pôvodne konať
+    let originalDate = new Date(task.time);
+    let targetDate = new Date(task.time);
+    let now = new Date();
+    
+    // 2. Ak je úloha v minulosti (alebo z dneška), posúvame ju na reálny ZAJTRAJŠOK
+    if (originalDate <= now) {
+        let zajtra = new Date();
+        zajtra.setDate(zajtra.getDate() + 1);
+        targetDate.setFullYear(zajtra.getFullYear(), zajtra.getMonth(), zajtra.getDate());
+    } else {
+        // Ak je to už plán do budúcnosti, posunieme ho proste o +1 deň
+        targetDate.setDate(targetDate.getDate() + 1);
+    }
+    
+    // 3. Vypočítame časový rozdiel v milisekundách (dôležité pre posun celej rutiny)
+    let casovyPosun = targetDate.getTime() - originalDate.getTime();
+
     if (posunutCeluSekvenciu) {
         const q = query(collection(db, "tasks"), where("rutinaId", "==", task.rutinaId));
         const querySnapshot = await getDocs(q);
         const batch = writeBatch(db);
+        
         querySnapshot.forEach((docSnap) => {
             let taskData = docSnap.data();
+            // Posúvame len túto a všetky BUDÚCE úlohy v danej rutine
             if (taskData.time >= task.time) {
-                let d = new Date(taskData.time); d.setDate(d.getDate() + 1);
+                let d = new Date(taskData.time);
+                d.setTime(d.getTime() + casovyPosun); // Posunie ju presne o ten istý rozdiel
                 batch.update(docSnap.ref, { time: formatLocalTime(d), odlozenia: increment(1) });
             }
         });
         await batch.commit();
     } else {
-        let d = new Date(task.time); d.setDate(d.getDate() + 1);
-        await updateDoc(doc(db, "tasks", task.id), { time: formatLocalTime(d), odlozenia: increment(1) });
+        // Posunutie iba jednej konkrétnej úlohy
+        await updateDoc(doc(db, "tasks", task.id), { time: formatLocalTime(targetDate), odlozenia: increment(1) });
     }
 }
 
