@@ -204,9 +204,9 @@ addTaskBtn.addEventListener('click', async () => {
     }
 });
 
-completeTaskBtn.addEventListener('click', async () => {
-    if (!currentOpenedTask) return;
-    const task = currentOpenedTask; let reward = getTaskReward(task);
+// --- 1. UNIVERZÁLNE FUNKCIE (Mozog pre všetky modaly) ---
+async function processComplete(task) {
+    let reward = getTaskReward(task);
     await updateDoc(doc(db, "tasks", task.id), { status: "splnena" });
     if (reward > 0) {
         const userRef = doc(db, "users", currentUser.uid);
@@ -214,79 +214,140 @@ completeTaskBtn.addEventListener('click', async () => {
         if (!userSnap.exists()) await setDoc(userRef, { totalCoins: reward });
         else await updateDoc(userRef, { totalCoins: increment(reward) });
     }
+}
+
+async function processSnooze(task) {
+    let posunutCeluSekvenciu = false;
+    if (task.rutinaId) {
+        posunutCeluSekvenciu = confirm("Tento plán je súčasťou rutiny.\n\nKlikni [OK] pre posunutie CELEJ SEKVENCIE.\n(Posunie túto a všetky budúce úlohy v sérii o 1 deň).\n\nKlikni [ZRUŠIŤ] pre posunutie IBA TEJTO JEDNEJ úlohy.");
+    }
+    
+    if (posunutCeluSekvenciu) {
+        const q = query(collection(db, "tasks"), where("rutinaId", "==", task.rutinaId));
+        const querySnapshot = await getDocs(q);
+        const batch = writeBatch(db);
+        querySnapshot.forEach((docSnap) => {
+            let taskData = docSnap.data();
+            if (taskData.time >= task.time) {
+                let d = new Date(taskData.time); d.setDate(d.getDate() + 1);
+                batch.update(docSnap.ref, { time: formatLocalTime(d), odlozenia: increment(1) });
+            }
+        });
+        await batch.commit();
+    } else {
+        let d = new Date(task.time); d.setDate(d.getDate() + 1);
+        await updateDoc(doc(db, "tasks", task.id), { time: formatLocalTime(d), odlozenia: increment(1) });
+    }
+}
+
+async function processDelete(task) {
+    let success = false;
+    if (task.rutinaId) {
+        const zmazatCelu = confirm("Táto úloha je súčasťou rutiny.\n\nKlikni [OK], ak chceš zmazať CELÚ SEKVENCIU.\nKlikni [ZRUŠIŤ], pre zmazanie IBA TEJTO JEDNEJ úlohy.");
+        if (zmazatCelu) {
+            const q = query(collection(db, "tasks"), where("rutinaId", "==", task.rutinaId));
+            const querySnapshot = await getDocs(q);
+            const batch = writeBatch(db);
+            querySnapshot.forEach((docSnap) => {
+                let taskData = docSnap.data();
+                if (taskData.time >= task.time) { batch.delete(docSnap.ref); }
+            });
+            await batch.commit(); success = true;
+        } else {
+            const zmazatJednu = confirm("Chceš trvalo zmazať IBA TÚTO JEDNU konkrétnu úlohu?");
+            if (zmazatJednu) { await deleteDoc(doc(db, "tasks", task.id)); success = true; }
+        }
+    } else {
+        const confirmDelete = confirm("Naozaj chceš túto úlohu trvalo zmazať?");
+        if (confirmDelete) { await deleteDoc(doc(db, "tasks", task.id)); success = true; }
+    }
+    return success; // Informácia pre kartu, či má po zmazaní prejsť na ďalšiu
+}
+
+// --- 2. KLASICKÝ DETAIL ÚLOHY (V kalendári) ---
+completeTaskBtn.addEventListener('click', async () => {
+    if (!currentOpenedTask) return;
+    await processComplete(currentOpenedTask);
     modal.classList.add('hidden');
 });
 
 snoozeTaskBtn.addEventListener('click', async () => {
     if (!currentOpenedTask) return;
-    let posunutCeluSekvenciu = false;
-    
-    if (currentOpenedTask.rutinaId) {
-        posunutCeluSekvenciu = confirm("Tento plán je súčasťou rutiny.\n\nKlikni [OK] pre posunutie CELEJ SEKVENCIE.\n(Posunie túto a všetky budúce úlohy v sérii o 1 deň).\n\nKlikni [ZRUŠIŤ] pre posunutie IBA TEJTO JEDNEJ úlohy.");
-    }
-    
-    if (posunutCeluSekvenciu) {
-        const q = query(collection(db, "tasks"), 
-            where("rutinaId", "==", currentOpenedTask.rutinaId),
-            where("time", ">=", currentOpenedTask.time)
-        );
-        const querySnapshot = await getDocs(q);
-        const batch = writeBatch(db);
-        
-        querySnapshot.forEach((docSnap) => {
-            let taskData = docSnap.data();
-            let d = new Date(taskData.time); d.setDate(d.getDate() + 1);
-            batch.update(docSnap.ref, { time: formatLocalTime(d), odlozenia: increment(1) });
-        });
-        await batch.commit();
-    } else {
-        let d = new Date(currentOpenedTask.time); d.setDate(d.getDate() + 1);
-        await updateDoc(doc(db, "tasks", currentOpenedTask.id), { time: formatLocalTime(d), odlozenia: increment(1) });
-    }
-    
+    await processSnooze(currentOpenedTask);
     modal.classList.add('hidden');
 });
 
 deleteTaskBtn.addEventListener('click', async () => {
     if (!currentOpenedTask) return;
+    const zmazane = await processDelete(currentOpenedTask);
+    if (zmazane) modal.classList.add('hidden');
+});
 
-    if (currentOpenedTask.rutinaId) {
-        const zmazatCelu = confirm(
-            "Táto úloha je súčasťou rutiny.\n\n" +
-            "Klikni [OK], ak chceš zmazať CELÚ SEKVENCIU (túto aj všetky budúce z tohto cyklu).\n" +
-            "Klikni [ZRUŠIŤ], ak chceš riešiť iba túto jednu konkrétnu úlohu."
-        );
+// --- 3. NOVÉ: VEČERNÉ ZHODNOTENIE (Tinder štýl kariet) ---
+let reviewTasks = [];
+let currentReviewIndex = 0;
+const reviewModal = document.getElementById('reviewModal');
 
-        if (zmazatCelu) {
-            // Hromadné vymazanie pomocou dávky (batch)
-            const q = query(collection(db, "tasks"), 
-                where("rutinaId", "==", currentOpenedTask.rutinaId),
-                where("time", ">=", currentOpenedTask.time)
-            );
-            const querySnapshot = await getDocs(q);
-            const batch = writeBatch(db);
-            
-            querySnapshot.forEach((docSnap) => {
-                batch.delete(docSnap.ref);
-            });
-            await batch.commit();
-            modal.classList.add('hidden');
-        } else {
-            // Používateľ dal zrušiť hromadné mazanie, overíme, či chce zmazať aspoň tú jednu
-            const zmazatJednu = confirm("Chceš teda trvalo zmazať IBA TÚTO JEDNU konkrétnu úlohu?");
-            if (zmazatJednu) {
-                await deleteDoc(doc(db, "tasks", currentOpenedTask.id));
-                modal.classList.add('hidden');
-            }
-        }
-    } else {
-        // Klasické mazanie pre jednorazovú úlohu
-        const confirmDelete = confirm("Naozaj chceš túto jednorazovú úlohu trvalo zmazať?");
-        if (confirmDelete) { 
-            await deleteDoc(doc(db, "tasks", currentOpenedTask.id)); 
-            modal.classList.add('hidden'); 
-        }
+document.getElementById('startReviewBtn').addEventListener('click', () => {
+    const now = new Date();
+    now.setHours(23, 59, 59); // Filtrujeme všetko do konca dnešného dňa
+    const endOfDayIso = formatLocalTime(now);
+    
+    // Nájde len nekompletné úlohy z dneška a minulosti
+    reviewTasks = tasksData.filter(t => t.time <= endOfDayIso && t.status !== 'splnena');
+    
+    if (reviewTasks.length === 0) {
+        alert("Paráda! Na dnes máš všetko hotové alebo vyčistené. 🏆");
+        return;
     }
+    currentReviewIndex = 0;
+    showReviewTask();
+});
+
+function showReviewTask() {
+    if (currentReviewIndex >= reviewTasks.length) {
+        reviewModal.classList.add('hidden');
+        alert("Večerné zhodnotenie je kompletne hotové! Skvelá práca. 🎉");
+        return;
+    }
+    
+    const task = reviewTasks[currentReviewIndex];
+    
+    document.getElementById('reviewProgress').innerText = `Úloha ${currentReviewIndex + 1} z ${reviewTasks.length}`;
+    document.getElementById('reviewTaskName').innerText = task.name;
+    document.getElementById('reviewTaskTime').innerText = new Date(task.time).toLocaleString('sk-SK');
+    document.getElementById('reviewTaskRoutine').style.display = task.rutinaId ? 'block' : 'none';
+    
+    let reward = getTaskReward(task);
+    if (reward > 0) {
+        document.getElementById('reviewTaskReward').innerHTML = `<span style="color: #28a745;">🪙 +${reward} mincí</span>`;
+    } else {
+        document.getElementById('reviewTaskReward').innerHTML = `<span style="color: #dc3545; text-decoration: line-through;">🪙 0 mincí</span>`;
+    }
+    
+    reviewModal.classList.remove('hidden');
+}
+
+document.getElementById('closeReviewModal').addEventListener('click', () => reviewModal.classList.add('hidden'));
+
+// Ovládanie tlačidiel na kartách hodnotenia
+document.getElementById('reviewCompleteBtn').addEventListener('click', async () => {
+    const btn = document.getElementById('reviewCompleteBtn'); btn.disabled = true;
+    await processComplete(reviewTasks[currentReviewIndex]);
+    btn.disabled = false; currentReviewIndex++; showReviewTask();
+});
+
+document.getElementById('reviewSnoozeBtn').addEventListener('click', async () => {
+    const btn = document.getElementById('reviewSnoozeBtn'); btn.disabled = true;
+    await processSnooze(reviewTasks[currentReviewIndex]);
+    btn.disabled = false; currentReviewIndex++; showReviewTask();
+});
+
+document.getElementById('reviewDeleteBtn').addEventListener('click', async () => {
+    const btn = document.getElementById('reviewDeleteBtn'); btn.disabled = true;
+    const zmazane = await processDelete(reviewTasks[currentReviewIndex]);
+    btn.disabled = false;
+    if (zmazane) { currentReviewIndex++; showReviewTask(); }
 });
 
 function loadUserTasks() {
