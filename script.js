@@ -59,7 +59,7 @@ const completeTaskBtn = document.getElementById('completeTaskBtn'); const snooze
 const deleteTaskBtn = document.getElementById('deleteTaskBtn');
 
 let tasksData = []; let weekOffset = 0; let currentUser = null; let currentOpenedTask = null; 
-let unsubscribeTasks = null; let unsubscribeUser = null;
+let unsubscribeTasks = null; let unsubscribeUser = null; let currentTotalCoins = 0;
 
 togglePassword.addEventListener('click', () => {
     if (passwordInput.type === 'password') { passwordInput.type = 'text'; confirmPasswordInput.type = 'text'; togglePassword.innerText = '🙈'; } 
@@ -77,8 +77,16 @@ toggleAuthModeBtn.addEventListener('click', (e) => {
 function loadUserCoins() {
     const userRef = doc(db, "users", currentUser.uid);
     unsubscribeUser = onSnapshot(userRef, (docSnap) => {
-        if (docSnap.exists()) { coinBalanceDisplay.innerText = `🪙 ${docSnap.data().totalCoins || 0}`; } 
-        else { coinBalanceDisplay.innerText = `🪙 0`; }
+        if (docSnap.exists()) { 
+            currentTotalCoins = docSnap.data().totalCoins || 0;
+            coinBalanceDisplay.innerText = `🪙 ${currentTotalCoins}`; 
+        } else { 
+            currentTotalCoins = 0;
+            coinBalanceDisplay.innerText = `🪙 0`; 
+        }
+        if (!document.getElementById('shopModal').classList.contains('hidden')) {
+            renderShop(); // Aktualizuje tlačidlá v obchode naživo
+        }
     });
 }
 
@@ -502,3 +510,56 @@ const initDate = new Date(); initDate.setMinutes(initDate.getMinutes() - initDat
 taskTimeInput.value = initDate.toISOString().slice(0, 16);
 
 renderCalendar();
+
+// --- 4. OBCHOD S ODMENAMI ---
+const shopModal = document.getElementById('shopModal');
+const closeShopModal = document.getElementById('closeShopModal');
+const shopItemsContainer = document.getElementById('shopItemsContainer');
+
+const rewardsList = [
+    { name: "Vychladené pivko", price: 100, icon: "🍺" },
+    { name: "Fľaša vínka", price: 350, icon: "🍷" },
+    { name: "Cheat day", price: 500, icon: "🍔" },
+    { name: "Courvoisier", price: 1200, icon: "🥃" },
+    { name: "Dovolenka", price: 2000, icon: "✈️" }
+];
+
+document.getElementById('openShopBtn').addEventListener('click', () => {
+    renderShop();
+    shopModal.classList.remove('hidden');
+});
+
+closeShopModal.addEventListener('click', () => shopModal.classList.add('hidden'));
+
+function renderShop() {
+    shopItemsContainer.innerHTML = '';
+    rewardsList.forEach(reward => {
+        const canAfford = currentTotalCoins >= reward.price;
+        const itemDiv = document.createElement('div');
+        itemDiv.className = 'shop-item';
+
+        itemDiv.innerHTML = `
+            <div class="shop-icon">${reward.icon}</div>
+            <div class="shop-title">${reward.name}</div>
+            <button class="shop-btn" ${!canAfford ? 'disabled' : ''}>
+                🪙 ${reward.price}
+            </button>
+        `;
+
+        const buyBtn = itemDiv.querySelector('.shop-btn');
+        buyBtn.addEventListener('click', () => buyReward(reward));
+
+        shopItemsContainer.appendChild(itemDiv);
+    });
+}
+
+async function buyReward(reward) {
+    if (currentTotalCoins >= reward.price) {
+        const confirmBuy = confirm(`Naozaj si chceš kúpiť "${reward.name}" za ${reward.price} mincí?`);
+        if (confirmBuy) {
+            const userRef = doc(db, "users", currentUser.uid);
+            await updateDoc(userRef, { totalCoins: increment(-reward.price) });
+            alert(`Gratulujem! Zakúpil si: ${reward.name} 🎉 Uži si odmenu!`);
+        }
+    }
+}

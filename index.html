@@ -39,6 +39,7 @@
           <h1>Organizátor</h1>
           <div style="display: flex; align-items: center; gap: 10px;">
               <button id="startReviewBtn" style="background-color: #6f42c1; padding: 6px 10px; font-size: 12px; border-radius: 4px; color: white; border: none; cursor: pointer; font-weight: bold;">🌜 Zhodnotiť</button>
+              <button id="openShopBtn" style="background-color: #ffc107; padding: 6px 10px; font-size: 12px; border-radius: 4px; color: #333; border: none; cursor: pointer; font-weight: bold;">🛒 Obchod</button>
               <div id="coinBalance" class="coin-badge">🪙 0</div>
               <button id="logoutBtn" style="background-color: #dc3545; padding: 6px 10px; font-size: 12px;">Odhlásiť</button>
           </div>
@@ -146,6 +147,15 @@
                 <button id="reviewDeleteBtn" style="background-color: #dc3545;">🗑️ Vymazať</button>
             </div>
         </div>
+    </div>
+    <!-- OBCHOD S ODMENAMI MODAL -->
+    <div id="shopModal" class="modal hidden">
+      <div class="modal-content" style="max-width: 500px;">
+         <span class="close-modal" id="closeShopModal">&times;</span>
+         <h2>🛒 Obchod s odmenami</h2>
+         <p style="text-align: center; margin-bottom: 15px; color: #555;">Kúp si zaslúženú odmenu za svoje mince!</p>
+         <div id="shopItemsContainer" class="shop-grid"></div>
+      </div>
     </div>
     <script type="module" src="script.js"></script>
     <script>
