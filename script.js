@@ -2,7 +2,6 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebas
 import { getFirestore, collection, addDoc, onSnapshot, query, where, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, sendPasswordResetEmail, browserLocalPersistence, setPersistence } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
-// KONEČNE OPRAVENÝ API KĽÚČ S VEĽKÝM "S"
 const firebaseConfig = {
   apiKey: "AIzaSyB3s66YOemJTt5xAarMZwSq4rT6G43dACw",
   authDomain: "organizator-977e1.firebaseapp.com",
@@ -22,7 +21,7 @@ if ("Notification" in window && Notification.permission !== "granted" && Notific
     Notification.requestPermission();
 }
 
-let isLoginMode = true; // Sledujeme, či sme v režime prihlásenia alebo registrácie
+let isLoginMode = true; 
 
 const loginScreen = document.getElementById('loginScreen');
 const appContainer = document.getElementById('appContainer');
@@ -61,7 +60,6 @@ let currentUser = null;
 let currentOpenedTaskId = null;
 let unsubscribeSnapshot = null;
 
-// Prepínanie viditeľnosti hesla
 togglePassword.addEventListener('click', () => {
     if (passwordInput.type === 'password') {
         passwordInput.type = 'text';
@@ -74,7 +72,6 @@ togglePassword.addEventListener('click', () => {
     }
 });
 
-// Prepínanie medzi prihlásením a registráciou
 toggleAuthModeBtn.addEventListener('click', (e) => {
     e.preventDefault();
     isLoginMode = !isLoginMode;
@@ -112,7 +109,6 @@ onAuthStateChanged(auth, (user) => {
     }
 });
 
-// Hlavné tlačidlo rieši obe akcie podľa režimu
 mainAuthBtn.addEventListener('click', async () => {
     authError.style.display = 'none';
     authSuccess.style.display = 'none';
@@ -120,7 +116,6 @@ mainAuthBtn.addEventListener('click', async () => {
     const password = passwordInput.value;
 
     if (isLoginMode) {
-        // PRIHLÁSENIE
         try {
             await signInWithEmailAndPassword(auth, email, password);
         } catch (e) {
@@ -128,7 +123,6 @@ mainAuthBtn.addEventListener('click', async () => {
             authError.style.display = 'block';
         }
     } else {
-        // REGISTRÁCIA S OVERENÍM HESLA
         const confirmPassword = confirmPasswordInput.value;
         if (password !== confirmPassword) {
             authError.innerText = "Heslá sa nezhodujú! Skontroluj preklepy.";
@@ -141,7 +135,26 @@ mainAuthBtn.addEventListener('click', async () => {
             return;
         }
         try {
+            // Vytvorenie účtu
             await createUserWithEmailAndPassword(auth, email, password);
+            
+            // Okamžité odhlásenie
+            await signOut(auth); 
+            
+            // Vizuálny reset do režimu prihlásenia
+            authSuccess.innerText = "Účet vytvorený! Teraz sa prosím prihlás.";
+            authSuccess.style.display = 'block';
+            
+            passwordInput.value = '';
+            confirmPasswordInput.value = '';
+            
+            isLoginMode = true;
+            authTitle.innerText = "Prihlásenie";
+            confirmPasswordWrapper.style.display = 'none';
+            mainAuthBtn.innerText = "Prihlásiť sa";
+            toggleAuthModeBtn.innerText = "Nemáš účet? Zaregistruj sa";
+            forgotPasswordBtn.style.display = 'inline-block';
+
         } catch (e) {
             authError.innerText = "Chyba registrácie: Skontroluj, či už účet s týmto emailom neexistuje.";
             authError.style.display = 'block';
