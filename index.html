@@ -12,21 +12,29 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <!-- PRIHLASOVACIA OBRAZOVKA -->
+    <!-- PRIHLASOVACIA / REGISTRAČNÁ OBRAZOVKA -->
     <div id="loginScreen" class="auth-container">
-        <h2>Prihlásenie</h2>
+        <h2 id="authTitle">Prihlásenie</h2>
         <input type="email" id="emailInput" placeholder="Tvoj E-mail" required>
         
-        <!-- POLÍČKO NA HESLO S OKOM -->
+        <!-- Heslo 1 -->
         <div class="password-wrapper">
-            <input type="password" id="passwordInput" placeholder="Tvoje Heslo" required>
+            <input type="password" id="passwordInput" placeholder="Heslo" required>
             <span id="togglePassword" class="eye-icon">👁️‍🗨️</span>
         </div>
 
-        <button id="loginBtn">Prihlásiť sa</button>
-        <button id="registerBtn" class="secondary-btn">Nová registrácia</button>
+        <!-- Heslo 2 (Zobrazí sa len pri registrácii) -->
+        <div class="password-wrapper" id="confirmPasswordWrapper" style="display: none; margin-top: 10px;">
+            <input type="password" id="confirmPasswordInput" placeholder="Zopakuj heslo">
+        </div>
+
+        <button id="mainAuthBtn">Prihlásiť sa</button>
         
-        <!-- TLAČIDLO NA RESET HESLA -->
+        <!-- Prepínanie medzi prihlásením a registráciou -->
+        <p style="text-align: center; margin-top: 10px;">
+            <a href="#" id="toggleAuthMode" style="font-size: 14px; color: #28a745; text-decoration: none; font-weight: bold;">Nemáš účet? Zaregistruj sa</a>
+        </p>
+        
         <p style="text-align: center; margin-top: 5px;">
             <a href="#" id="forgotPassword" style="font-size: 13px; color: #007bff; text-decoration: none;">Zabudol si heslo?</a>
         </p>

@@ -2,8 +2,9 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebas
 import { getFirestore, collection, addDoc, onSnapshot, query, where, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, sendPasswordResetEmail, browserLocalPersistence, setPersistence } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
+// KONEČNE OPRAVENÝ API KĽÚČ S VEĽKÝM "S"
 const firebaseConfig = {
-  apiKey: "AIzaSyB3s66YOemJTt5xAarMZwsQ4rT6G43dACw",
+  apiKey: "AIzaSyB3s66YOemJTt5xAarMZwSq4rT6G43dACw",
   authDomain: "organizator-977e1.firebaseapp.com",
   projectId: "organizator-977e1",
   storageBucket: "organizator-977e1.firebasestorage.app",
@@ -15,37 +16,28 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
 
-// Nastavenie lokálnej perzistencie pre stabilné prihlásenie
-setPersistence(auth, browserLocalPersistence).catch((error) => {
-    console.error("Chyba perzistencie:", error);
-});
+setPersistence(auth, browserLocalPersistence).catch((error) => { console.error(error); });
 
 if ("Notification" in window && Notification.permission !== "granted" && Notification.permission !== "denied") {
     Notification.requestPermission();
 }
 
+let isLoginMode = true; // Sledujeme, či sme v režime prihlásenia alebo registrácie
+
 const loginScreen = document.getElementById('loginScreen');
 const appContainer = document.getElementById('appContainer');
+const authTitle = document.getElementById('authTitle');
 const emailInput = document.getElementById('emailInput');
 const passwordInput = document.getElementById('passwordInput');
+const confirmPasswordWrapper = document.getElementById('confirmPasswordWrapper');
+const confirmPasswordInput = document.getElementById('confirmPasswordInput');
 const togglePassword = document.getElementById('togglePassword');
-const loginBtn = document.getElementById('loginBtn');
-const registerBtn = document.getElementById('registerBtn');
-const logoutBtn = document.getElementById('logoutBtn');
+const mainAuthBtn = document.getElementById('mainAuthBtn');
+const toggleAuthModeBtn = document.getElementById('toggleAuthMode');
 const forgotPasswordBtn = document.getElementById('forgotPassword');
 const authError = document.getElementById('authError');
 const authSuccess = document.getElementById('authSuccess');
-
-// Prepínanie viditeľnosti hesla (oko)
-togglePassword.addEventListener('click', () => {
-    if (passwordInput.type === 'password') {
-        passwordInput.type = 'text';
-        togglePassword.innerText = '🙈';
-    } else {
-        passwordInput.type = 'password';
-        togglePassword.innerText = '👁️‍🗨️';
-    }
-});
+const logoutBtn = document.getElementById('logoutBtn');
 
 const taskNameInput = document.getElementById('taskName');
 const taskTimeInput = document.getElementById('taskTime');
@@ -69,6 +61,41 @@ let currentUser = null;
 let currentOpenedTaskId = null;
 let unsubscribeSnapshot = null;
 
+// Prepínanie viditeľnosti hesla
+togglePassword.addEventListener('click', () => {
+    if (passwordInput.type === 'password') {
+        passwordInput.type = 'text';
+        confirmPasswordInput.type = 'text';
+        togglePassword.innerText = '🙈';
+    } else {
+        passwordInput.type = 'password';
+        confirmPasswordInput.type = 'password';
+        togglePassword.innerText = '👁️‍🗨️';
+    }
+});
+
+// Prepínanie medzi prihlásením a registráciou
+toggleAuthModeBtn.addEventListener('click', (e) => {
+    e.preventDefault();
+    isLoginMode = !isLoginMode;
+    authError.style.display = 'none';
+    authSuccess.style.display = 'none';
+    
+    if (isLoginMode) {
+        authTitle.innerText = "Prihlásenie";
+        confirmPasswordWrapper.style.display = 'none';
+        mainAuthBtn.innerText = "Prihlásiť sa";
+        toggleAuthModeBtn.innerText = "Nemáš účet? Zaregistruj sa";
+        forgotPasswordBtn.style.display = 'inline-block';
+    } else {
+        authTitle.innerText = "Registrácia";
+        confirmPasswordWrapper.style.display = 'block';
+        mainAuthBtn.innerText = "Vytvoriť účet";
+        toggleAuthModeBtn.innerText = "Už máš účet? Prihlás sa";
+        forgotPasswordBtn.style.display = 'none';
+    }
+});
+
 onAuthStateChanged(auth, (user) => {
     if (user) {
         currentUser = user;
@@ -85,30 +112,43 @@ onAuthStateChanged(auth, (user) => {
     }
 });
 
-registerBtn.addEventListener('click', async () => {
+// Hlavné tlačidlo rieši obe akcie podľa režimu
+mainAuthBtn.addEventListener('click', async () => {
     authError.style.display = 'none';
     authSuccess.style.display = 'none';
-    try {
-        if(passwordInput.value.length < 6) throw new Error("Heslo musí mať aspoň 6 znakov.");
-        await createUserWithEmailAndPassword(auth, emailInput.value, passwordInput.value);
-    } catch (e) {
-        authError.innerText = "Chyba registrácie: " + e.message;
-        authError.style.display = 'block';
+    const email = emailInput.value;
+    const password = passwordInput.value;
+
+    if (isLoginMode) {
+        // PRIHLÁSENIE
+        try {
+            await signInWithEmailAndPassword(auth, email, password);
+        } catch (e) {
+            authError.innerText = "Chyba prihlásenia: Nesprávny e-mail alebo heslo.";
+            authError.style.display = 'block';
+        }
+    } else {
+        // REGISTRÁCIA S OVERENÍM HESLA
+        const confirmPassword = confirmPasswordInput.value;
+        if (password !== confirmPassword) {
+            authError.innerText = "Heslá sa nezhodujú! Skontroluj preklepy.";
+            authError.style.display = 'block';
+            return;
+        }
+        if (password.length < 6) {
+            authError.innerText = "Heslo musí mať aspoň 6 znakov.";
+            authError.style.display = 'block';
+            return;
+        }
+        try {
+            await createUserWithEmailAndPassword(auth, email, password);
+        } catch (e) {
+            authError.innerText = "Chyba registrácie: Skontroluj, či už účet s týmto emailom neexistuje.";
+            authError.style.display = 'block';
+        }
     }
 });
 
-loginBtn.addEventListener('click', async () => {
-    authError.style.display = 'none';
-    authSuccess.style.display = 'none';
-    try {
-        await signInWithEmailAndPassword(auth, emailInput.value, passwordInput.value);
-    } catch (e) {
-        authError.innerText = "Chyba prihlásenia: Nesprávny e-mail alebo heslo.";
-        authError.style.display = 'block';
-    }
-});
-
-// Reset hesla
 forgotPasswordBtn.addEventListener('click', async (e) => {
     e.preventDefault();
     authError.style.display = 'none';
@@ -124,7 +164,7 @@ forgotPasswordBtn.addEventListener('click', async (e) => {
         authSuccess.innerText = "Odkaz na reset hesla bol odoslaný na tvoj e-mail!";
         authSuccess.style.display = 'block';
     } catch (err) {
-        authError.innerText = "Nepodarilo sa odoslať reset: " + err.message;
+        authError.innerText = "Nepodarilo sa odoslať reset: Skontroluj e-mail.";
         authError.style.display = 'block';
     }
 });
