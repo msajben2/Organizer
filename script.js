@@ -59,7 +59,8 @@ const completeTaskBtn = document.getElementById('completeTaskBtn'); const snooze
 const deleteTaskBtn = document.getElementById('deleteTaskBtn');
 
 let tasksData = []; let weekOffset = 0; let currentUser = null; let currentOpenedTask = null; 
-let unsubscribeTasks = null; let unsubscribeUser = null; let unsubscribeRewards = null; let currentTotalCoins = 0; let rewardsData = [];
+let unsubscribeTasks = null; let unsubscribeUser = null; let unsubscribeRewards = null;
+let currentTotalCoins = 0; let userRewards = [];
 
 togglePassword.addEventListener('click', () => {
     if (passwordInput.type === 'password') { passwordInput.type = 'text'; confirmPasswordInput.type = 'text'; togglePassword.innerText = '🙈'; } 
