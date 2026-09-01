@@ -67,3 +67,7 @@ button:hover { background-color: #218838; opacity: 0.9; }
 .shop-title { font-size: 14px; font-weight: bold; margin-bottom: 10px; min-height: 34px; }
 .shop-btn { background: #28a745; color: white; border: none; padding: 8px; border-radius: 4px; cursor: pointer; width: 100%; font-weight: bold; }
 .shop-btn:disabled { background: #ccc; cursor: not-allowed; }
+/* POSUVNÍKY (SLIDERS) PRE DOTAZNÍK */
+.slider-group { margin-bottom: 15px; text-align: left; }
+.slider-group label { display: block; font-size: 13px; font-weight: bold; margin-bottom: 5px; color: #333; }
+.slider-group input[type="range"] { width: 100%; cursor: pointer; accent-color: #007bff; }

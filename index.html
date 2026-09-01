@@ -154,7 +154,46 @@
          <span class="close-modal" id="closeShopModal">&times;</span>
          <h2>🛒 Obchod s odmenami</h2>
          <p style="text-align: center; margin-bottom: 15px; color: #555;">Kúp si zaslúženú odmenu za svoje mince!</p>
+         <button id="openAddRewardBtn" style="width: 100%; background-color: #007bff; color: white; border: none; padding: 10px; border-radius: 4px; margin-bottom: 15px; cursor: pointer; font-weight: bold;">➕ Pridať vlastnú odmenu</button>
          <div id="shopItemsContainer" class="shop-grid"></div>
+      </div>
+    </div>
+    <!-- PRIDANIE VLASTNEJ ODMENY (DOTAZNÍK) -->
+    <div id="addRewardModal" class="modal hidden">
+      <div class="modal-content" style="max-width: 400px; max-height: 90vh; overflow-y: auto;">
+         <span class="close-modal" id="closeAddRewardModal">&times;</span>
+         <h2>✨ Nová odmena</h2>
+
+         <input type="text" id="customRewardName" placeholder="Názov odmeny (napr. Kniha)" required style="width: 100%; margin-bottom: 10px; padding: 10px;">
+         <input type="text" id="customRewardIcon" placeholder="Emoji ikonka (napr. 📖)" required style="width: 100%; margin-bottom: 20px; padding: 10px;">
+
+         <div class="slider-group">
+             <label>💸 Finančná náročnosť: <span id="val1" style="color:#007bff">1</span>/10</label>
+             <input type="range" class="reward-slider" id="q1" min="1" max="10" value="1">
+         </div>
+         <div class="slider-group">
+             <label>⏳ Časová investícia: <span id="val2" style="color:#007bff">1</span>/10</label>
+             <input type="range" class="reward-slider" id="q2" min="1" max="10" value="1">
+         </div>
+         <div class="slider-group">
+             <label>💎 Exkluzivita (Vzácnosť): <span id="val3" style="color:#007bff">1</span>/10</label>
+             <input type="range" class="reward-slider" id="q3" min="1" max="10" value="1">
+         </div>
+         <div class="slider-group">
+             <label>🍔 Miera "hriechu": <span id="val4" style="color:#007bff">1</span>/10</label>
+             <input type="range" class="reward-slider" id="q4" min="1" max="10" value="1">
+         </div>
+         <div class="slider-group">
+             <label>🤤 Osobná túžba: <span id="val5" style="color:#007bff">1</span>/10</label>
+             <input type="range" class="reward-slider" id="q5" min="1" max="10" value="1">
+         </div>
+
+         <div style="background: #e9ecef; padding: 15px; border-radius: 8px; text-align: center; margin-top: 20px; margin-bottom: 15px;">
+             <span style="font-size: 14px; color: #555;">Kalkulovaná hodnota odmeny:</span><br>
+             <strong id="livePriceCalc" style="font-size: 28px; color: #28a745;">🪙 100</strong>
+         </div>
+
+         <button id="saveCustomRewardBtn" style="width: 100%; background: #28a745; color: white; border: none; padding: 12px; border-radius: 4px; font-weight: bold; cursor: pointer;">Pridať do obchodu</button>
       </div>
     </div>
     <script type="module" src="script.js"></script>

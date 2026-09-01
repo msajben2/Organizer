@@ -59,7 +59,7 @@ const completeTaskBtn = document.getElementById('completeTaskBtn'); const snooze
 const deleteTaskBtn = document.getElementById('deleteTaskBtn');
 
 let tasksData = []; let weekOffset = 0; let currentUser = null; let currentOpenedTask = null; 
-let unsubscribeTasks = null; let unsubscribeUser = null; let currentTotalCoins = 0;
+let unsubscribeTasks = null; let unsubscribeUser = null; let unsubscribeRewards = null; let currentTotalCoins = 0; let rewardsData = [];
 
 togglePassword.addEventListener('click', () => {
     if (passwordInput.type === 'password') { passwordInput.type = 'text'; confirmPasswordInput.type = 'text'; togglePassword.innerText = '🙈'; } 
@@ -93,10 +93,11 @@ function loadUserCoins() {
 onAuthStateChanged(auth, (user) => {
     if (user) {
         currentUser = user; loginScreen.style.display = 'none'; appContainer.style.display = 'block';
-        loadUserTasks(); loadUserCoins(); 
+        loadUserTasks(); loadUserCoins(); loadUserRewards(); // PRIDANÉ NAČÍTANIE ODMIEN
     } else {
         currentUser = null; loginScreen.style.display = 'flex'; appContainer.style.display = 'none';
-        if(unsubscribeTasks) unsubscribeTasks(); if(unsubscribeUser) unsubscribeUser(); tasksData = []; renderCalendar(); 
+        if(unsubscribeTasks) unsubscribeTasks(); if(unsubscribeUser) unsubscribeUser(); if(unsubscribeRewards) unsubscribeRewards(); // PRIDANÉ ODHLÁSENIE
+        tasksData = []; rewardsData = []; renderCalendar(); 
     }
 });
 
@@ -543,17 +544,31 @@ taskTimeInput.value = initDate.toISOString().slice(0, 16);
 renderCalendar();
 
 // --- 4. OBCHOD S ODMENAMI ---
+// --- 4. OBCHOD S ODMENAMI ---
 const shopModal = document.getElementById('shopModal');
 const closeShopModal = document.getElementById('closeShopModal');
 const shopItemsContainer = document.getElementById('shopItemsContainer');
 
-const rewardsList = [
-    { name: "Vychladené pivko", price: 100, icon: "🍺" },
-    { name: "Fľaša vínka", price: 350, icon: "🍷" },
-    { name: "Cheat day", price: 500, icon: "🍔" },
-    { name: "Courvoisier", price: 1200, icon: "🥃" },
-    { name: "Dovolenka", price: 2000, icon: "✈️" }
-];
+// FUNKCIA NA STIAHNUTIE TVOJICH ODMIEN Z DATABÁZY
+function loadUserRewards() {
+    const q = query(collection(db, "rewards"), where("userId", "==", currentUser.uid));
+    unsubscribeRewards = onSnapshot(q, (snapshot) => {
+        userRewards = [];
+        snapshot.forEach((doc) => { 
+            let r = doc.data(); 
+            r.id = doc.id; 
+            userRewards.push(r); 
+        });
+        
+        // Zoradíme odmeny od najlacnejšej po najdrahšiu
+        userRewards.sort((a, b) => a.price - b.price);
+        
+        // Ak je obchod práve otvorený, hneď ho prekreslíme
+        if (!shopModal.classList.contains('hidden')) {
+            renderShop();
+        }
+    });
+}
 
 document.getElementById('openShopBtn').addEventListener('click', () => {
     renderShop();
@@ -562,9 +577,17 @@ document.getElementById('openShopBtn').addEventListener('click', () => {
 
 closeShopModal.addEventListener('click', () => shopModal.classList.add('hidden'));
 
+// VYKRESLENIE ODMIEN Z DATABÁZY
 function renderShop() {
     shopItemsContainer.innerHTML = '';
-    rewardsList.forEach(reward => {
+    
+    // Ak ešte nemáš žiadne odmeny
+    if (userRewards.length === 0) {
+        shopItemsContainer.innerHTML = '<p style="grid-column: 1 / -1; text-align: center; color: #777;">Zatiaľ tu nemáš žiadne odmeny. Pridaj si prvú kliknutím na modré tlačidlo nižšie!</p>';
+        return;
+    }
+
+    userRewards.forEach(reward => {
         const canAfford = currentTotalCoins >= reward.price;
         const itemDiv = document.createElement('div');
         itemDiv.className = 'shop-item';
@@ -578,19 +601,17 @@ function renderShop() {
         `;
         
         const buyBtn = itemDiv.querySelector('.shop-btn');
-        // ZMENA: Tu posielame do funkcie aj samotné tlačidlo (e.target), aby sme ho vedeli zamknúť
         buyBtn.addEventListener('click', (e) => buyReward(reward, e.target));
         
         shopItemsContainer.appendChild(itemDiv);
     });
 }
 
+// NÁKUP ODMENY
 async function buyReward(reward, btnElement) {
-    // Ešte jedna poistka, či máš naozaj dosť mincí
     if (currentTotalCoins >= reward.price) {
         const confirmBuy = confirm(`Naozaj si chceš kúpiť "${reward.name}" za ${reward.price} mincí?`);
         if (confirmBuy) {
-            // OKAMŽITÉ ZAMKNUTIE TLAČIDLA PROTI DVOJKLIKOM
             btnElement.disabled = true;
             btnElement.innerText = "Kupujem...";
             
@@ -598,13 +619,95 @@ async function buyReward(reward, btnElement) {
                 const userRef = doc(db, "users", currentUser.uid);
                 await updateDoc(userRef, { totalCoins: increment(-reward.price) });
                 alert(`Gratulujem! Zakúpil si: ${reward.name} 🎉 Uži si odmenu!`);
-                // Po úspešnom nákupe sa obchod sám prekreslí vďaka Firebase onSnapshot
             } catch (error) {
                 alert("Nastala chyba pri nákupe.");
-                // Ak by internet vypadol, odomkneme tlačidlo naspäť
                 btnElement.disabled = false;
                 btnElement.innerText = `🪙 ${reward.price}`;
             }
         }
     }
 }
+
+// --- 5. PRIDANIE VLASTNEJ ODMENY (ALGORITMUS) ---
+const addRewardModal = document.getElementById('addRewardModal');
+const closeAddRewardModal = document.getElementById('closeAddRewardModal');
+const livePriceCalc = document.getElementById('livePriceCalc');
+const sliders = document.querySelectorAll('.reward-slider');
+
+// Otváranie a zatváranie
+document.getElementById('openAddRewardBtn').addEventListener('click', () => {
+    addRewardModal.classList.remove('hidden');
+    calculateLivePrice(); // Hneď na začiatku nastaví na 100
+});
+closeAddRewardModal.addEventListener('click', () => addRewardModal.classList.add('hidden'));
+
+// Živý prepočet ceny
+function calculateLivePrice() {
+    let basePrice = 100;
+    let multipliers = [];
+    
+    for (let i = 1; i <= 5; i++) {
+        let val = parseInt(document.getElementById(`q${i}`).value);
+        document.getElementById(`val${i}`).innerText = val; // Aktualizuje číslo na obrazovke
+        
+        // Matematika: 1 = 1.0x | 10 = 2.0x (Postupný rast)
+        let koeficient = 1 + ((val - 1) / 9);
+        multipliers.push(koeficient);
+    }
+    
+    // Vynásobíme základnú cenu všetkými 5 koeficientmi
+    let rawPrice = basePrice * multipliers[0] * multipliers[1] * multipliers[2] * multipliers[3] * multipliers[4];
+    
+    // Zaokrúhlime na celé desiatky, aby cena vyzerala pekne (napr. 340 namiesto 336)
+    let finalPrice = Math.round(rawPrice / 10) * 10;
+    
+    livePriceCalc.innerText = `🪙 ${finalPrice}`;
+    livePriceCalc.dataset.price = finalPrice; // Uložíme si číslo pre databázu
+}
+
+// Reagujeme na každý pohyb akéhokoľvek posuvníka
+sliders.forEach(slider => {
+    slider.addEventListener('input', calculateLivePrice);
+});
+
+// Uloženie odmeny do databázy
+document.getElementById('saveCustomRewardBtn').addEventListener('click', async () => {
+    const name = document.getElementById('customRewardName').value;
+    const icon = document.getElementById('customRewardIcon').value || "🎁";
+    const finalPrice = parseInt(livePriceCalc.dataset.price);
+
+    if (!name) {
+        alert("Zadaj názov odmeny!");
+        return;
+    }
+
+    const btn = document.getElementById('saveCustomRewardBtn');
+    btn.disabled = true;
+    btn.innerText = "Ukladám...";
+
+    try {
+        // Uložíme odmenu do novej kolekcie "rewards" pre konkrétneho používateľa
+        await addDoc(collection(db, "rewards"), {
+            name: name,
+            icon: icon,
+            price: finalPrice,
+            userId: currentUser.uid,
+            timestamp: Date.now()
+        });
+        
+        alert("Odmena úspešne pridaná do obchodu!");
+        
+        // Reset formulára
+        document.getElementById('customRewardName').value = "";
+        document.getElementById('customRewardIcon').value = "";
+        sliders.forEach(s => s.value = 1);
+        calculateLivePrice();
+        
+        addRewardModal.classList.add('hidden');
+    } catch (e) {
+        alert("Nastala chyba pri ukladaní.");
+    } finally {
+        btn.disabled = false;
+        btn.innerText = "Pridať do obchodu";
+    }
+});
