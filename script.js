@@ -582,7 +582,6 @@ closeShopModal.addEventListener('click', () => shopModal.classList.add('hidden')
 function renderShop() {
     shopItemsContainer.innerHTML = '';
     
-    // Ak ešte nemáš žiadne odmeny
     if (userRewards.length === 0) {
         shopItemsContainer.innerHTML = '<p style="grid-column: 1 / -1; text-align: center; color: #777;">Zatiaľ tu nemáš žiadne odmeny. Pridaj si prvú kliknutím na modré tlačidlo nižšie!</p>';
         return;
@@ -593,7 +592,10 @@ function renderShop() {
         const itemDiv = document.createElement('div');
         itemDiv.className = 'shop-item';
         
+        // Pridali sme CSS pre relatívne pozicovanie a samotný krížik
+        itemDiv.style.position = 'relative'; 
         itemDiv.innerHTML = `
+            <span class="delete-reward-btn" style="position: absolute; top: 5px; right: 8px; cursor: pointer; font-size: 14px; color: #dc3545;" title="Vymazať odmenu">❌</span>
             <div class="shop-icon">${reward.icon}</div>
             <div class="shop-title">${reward.name}</div>
             <button class="shop-btn" ${!canAfford ? 'disabled' : ''}>
@@ -601,8 +603,13 @@ function renderShop() {
             </button>
         `;
         
+        // Kliknutie na nákup
         const buyBtn = itemDiv.querySelector('.shop-btn');
         buyBtn.addEventListener('click', (e) => buyReward(reward, e.target));
+
+        // Kliknutie na vymazanie
+        const deleteBtn = itemDiv.querySelector('.delete-reward-btn');
+        deleteBtn.addEventListener('click', () => deleteCustomReward(reward.id, reward.name));
         
         shopItemsContainer.appendChild(itemDiv);
     });
@@ -625,6 +632,19 @@ async function buyReward(reward, btnElement) {
                 btnElement.disabled = false;
                 btnElement.innerText = `🪙 ${reward.price}`;
             }
+        }
+    }
+}
+// VYMAZANIE ODMENY Z OBCHODU
+async function deleteCustomReward(rewardId, rewardName) {
+    const confirmDelete = confirm(`Naozaj chceš trvalo vymazať odmenu "${rewardName}" z obchodu?`);
+    
+    if (confirmDelete) {
+        try {
+            await deleteDoc(doc(db, "rewards", rewardId));
+            // Po úspešnom vymazaní sa obchod sám okamžite prekreslí (vďaka onSnapshot)
+        } catch (error) {
+            alert("Nastala chyba pri mazaní odmeny.");
         }
     }
 }
