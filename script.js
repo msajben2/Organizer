@@ -161,7 +161,7 @@ addTaskBtn.addEventListener('click', async () => {
             };
 
             if (taskType === 'single') {
-                await addDoc(collection(db, "tasks"), { ...baseTaskData, time: timeStr });
+                await addDoc(collection(db, "users", currentUser.uid, "tasks"), { ...baseTaskData, time: timeStr });
                 generatedCount = 1;
             } else {
                 let currentDate = new Date(timeStr);
@@ -174,7 +174,7 @@ addTaskBtn.addEventListener('click', async () => {
                     
                     while (currentDate <= endDate) {
                         if (checkedDays.includes(currentDate.getDay())) {
-                            const docRef = doc(collection(db, "tasks"));
+                            const docRef = doc(collection(db, "users", currentUser.uid, "tasks"));
                             batch.set(docRef, { ...baseTaskData, time: formatLocalTime(currentDate), rutinaId: routineId });
                             generatedCount++;
                         }
@@ -188,7 +188,7 @@ addTaskBtn.addEventListener('click', async () => {
                     
                     while (currentDate <= endDate) {
                         if (cycleCounter < activeDays) {
-                            const docRef = doc(collection(db, "tasks"));
+                            const docRef = doc(collection(db, "users", currentUser.uid, "tasks"));
                             batch.set(docRef, { ...baseTaskData, time: formatLocalTime(currentDate), rutinaId: routineId });
                             generatedCount++;
                         }
@@ -218,7 +218,7 @@ addTaskBtn.addEventListener('click', async () => {
 // --- 1. UNIVERZÁLNE FUNKCIE (Mozog pre všetky modaly) ---
 async function processComplete(task) {
     let reward = getTaskReward(task);
-    await updateDoc(doc(db, "tasks", task.id), { status: "splnena" });
+    await updateDoc(doc(db, "users", currentUser.uid, "tasks", task.id), { status: "splnena" });
     if (reward > 0) {
         const userRef = doc(db, "users", currentUser.uid);
         const userSnap = await getDoc(userRef);
@@ -259,7 +259,8 @@ async function processSnooze(task) {
     let casovyPosun = targetDate.getTime() - originalDate.getTime();
 
     if (posunutCeluSekvenciu) {
-        const q = query(collection(db, "tasks"), where("rutinaId", "==", task.rutinaId));
+        const q = query(collection(db, "users", currentUser.uid, "tasks"), where("rutinaId", "==", task.rutinaId));
+
         const querySnapshot = await getDocs(q);
         const batch = writeBatch(db);
         
@@ -275,7 +276,7 @@ async function processSnooze(task) {
         await batch.commit();
     } else {
         // Posunutie iba jednej konkrétnej úlohy
-        await updateDoc(doc(db, "tasks", task.id), { time: formatLocalTime(targetDate), odlozenia: increment(1) });
+        await updateDoc(doc(db, "users", currentUser.uid, "tasks", task.id), { status: "splnena" });
     }
 }
 
@@ -284,7 +285,8 @@ async function processDelete(task) {
     if (task.rutinaId) {
         const zmazatCelu = confirm("Táto úloha je súčasťou rutiny.\n\nKlikni [OK], ak chceš zmazať CELÚ SEKVENCIU.\nKlikni [ZRUŠIŤ], pre zmazanie IBA TEJTO JEDNEJ úlohy.");
         if (zmazatCelu) {
-            const q = query(collection(db, "tasks"), where("rutinaId", "==", task.rutinaId));
+            const q = query(collection(db, "users", currentUser.uid, "tasks"), where("rutinaId", "==", task.rutinaId));
+        
             const querySnapshot = await getDocs(q);
             const batch = writeBatch(db);
             querySnapshot.forEach((docSnap) => {
@@ -294,11 +296,11 @@ async function processDelete(task) {
             await batch.commit(); success = true;
         } else {
             const zmazatJednu = confirm("Chceš trvalo zmazať IBA TÚTO JEDNU konkrétnu úlohu?");
-            if (zmazatJednu) { await deleteDoc(doc(db, "tasks", task.id)); success = true; }
+            if (zmazatJednu) { await deleteDoc(doc(db, "users", currentUser.uid, "tasks", task.id)); success = true; }
         }
     } else {
         const confirmDelete = confirm("Naozaj chceš túto úlohu trvalo zmazať?");
-        if (confirmDelete) { await deleteDoc(doc(db, "tasks", task.id)); success = true; }
+        if (confirmDelete) { await deleteDoc(doc(db, "users", currentUser.uid, "tasks", task.id)); success = true; }
     }
     return success; // Informácia pre kartu, či má po zmazaní prejsť na ďalšiu
 }
@@ -390,7 +392,7 @@ document.getElementById('reviewDeleteBtn').addEventListener('click', async () =>
 });
 
 function loadUserTasks() {
-    const q = query(collection(db, "tasks"), where("userId", "==", currentUser.uid));
+    const q = query(collection(db, "users", currentUser.uid, "tasks"), where("rutinaId", "==", task.rutinaId));
     unsubscribeTasks = onSnapshot(q, (snapshot) => {
         taskList.innerHTML = ''; tasksData = []; 
         snapshot.forEach((doc) => { const task = doc.data(); task.id = doc.id; tasksData.push(task); });
@@ -552,7 +554,7 @@ const shopItemsContainer = document.getElementById('shopItemsContainer');
 
 // FUNKCIA NA STIAHNUTIE TVOJICH ODMIEN Z DATABÁZY
 function loadUserRewards() {
-    const q = query(collection(db, "rewards"), where("userId", "==", currentUser.uid));
+    const q = query(collection(db, "users", currentUser.uid, "tasks"), where("rutinaId", "==", task.rutinaId));
     unsubscribeRewards = onSnapshot(q, (snapshot) => {
         userRewards = [];
         snapshot.forEach((doc) => { 
@@ -641,7 +643,7 @@ async function deleteCustomReward(rewardId, rewardName) {
     
     if (confirmDelete) {
         try {
-            await deleteDoc(doc(db, "rewards", rewardId));
+            await deleteDoc(doc(db, "users", currentUser.uid, "tasks", task.id));
             // Po úspešnom vymazaní sa obchod sám okamžite prekreslí (vďaka onSnapshot)
         } catch (error) {
             alert("Nastala chyba pri mazaní odmeny.");
@@ -708,7 +710,7 @@ document.getElementById('saveCustomRewardBtn').addEventListener('click', async (
 
     try {
         // Uložíme odmenu do novej kolekcie "rewards" pre konkrétneho používateľa
-        await addDoc(collection(db, "rewards"), {
+        await addDoc(collection(db, "users", currentUser.uid, "rewards"), {
             name: name,
             icon: icon,
             price: finalPrice,
